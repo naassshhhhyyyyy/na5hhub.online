@@ -5,64 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Happy Birthday Eden Ira 🎂</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Poppins;background:linear-gradient(135deg,#ff9a9e,#fecfef,#fad0c4);min-height:100vh;overflow:hidden;color:#333;}
-body::before{content:'';position:fixed;width:200%;height:200%;background:radial-gradient(circle,rgba(255,255,255,0.2) 2px,transparent 2px);background-size:50px 50px;animation:move 25s linear infinite;z-index:0;}
-@keyframes move{from{transform:translate(0,0);}to{transform:translate(-200px,-200px);}}
-
-/* dark mode */
-.dark{background:linear-gradient(135deg,#1a1a2e,#16213e);color:white;}
-
-/* pages */
-.page{position:absolute;width:100%;height:100%;display:flex;justify-content:center;align-items:center;flex-direction:column;text-align:center;padding:20px;opacity:0;transform:translateX(100%);transition:0.7s ease;z-index:1;}
-.page.active{opacity:1;transform:translateX(0);}
-.page.prev{transform:translateX(-100%);}
-
-/* card */
-.card{background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);padding:30px;border-radius:25px;box-shadow:0 15px 40px rgba(0,0,0,0.2);max-width:90%;width:350px;z-index:2;transition:all 0.5s ease;}
-
-/* title */
-.title{font-family:"Dancing Script";font-size:clamp(2rem,8vw,3.5rem);color:#ff4d6d;}
-
-/* countdown */
-.countdown h1{font-size:clamp(5rem,20vw,10rem);color:#ff4d6d;animation:bounce 1s infinite;}
-@keyframes bounce{50%{transform:translateY(-20px);}}
-
-/* cake */
-.cake{font-size:clamp(5rem,18vw,9rem);cursor:pointer;transition:0.3s;}
-.cake:hover{transform:scale(1.05);}
-
-/* button */
-.btn{margin-top:20px;padding:clamp(10px,2vw,15px) clamp(20px,5vw,30px);border:none;border-radius:30px;background:linear-gradient(45deg,#ff4d6d,#ff758f);color:white;font-weight:600;cursor:pointer;box-shadow:0 8px 20px rgba(255,77,109,0.4);transition:0.3s;}
-.btn:hover:not(:disabled){transform:scale(1.08);}
-.btn:disabled{opacity:0.5;cursor:not-allowed;}
-
-/* gallery */
-.gallery{display:flex;gap:10px;overflow-x:auto;padding:10px;scroll-behavior:smooth;}
-.gallery img{width:clamp(80px,30vw,150px);border-radius:15px;}
-
-/* typing */
-.typing{font-size:clamp(0.9rem,3vw,1.1rem);line-height:1.6;text-align:center;max-height:300px;overflow-y:auto;padding:10px;}
-.typing::after{content:'|';animation:blink 1s infinite;}
-@keyframes blink{50%{opacity:0;}}
-
-/* toggle */
-.toggle{position:fixed;top:15px;right:15px;z-index:999;}
-
-/* gift box fly away */
-.flyAway {animation: flyAwayMove 1s forwards, flyAwayShrink 1s 1s forwards;}
-@keyframes flyAwayMove {0% { transform: translate(0,0) rotate(0deg); opacity: 1; }100% { transform: translate(500px,-500px) rotate(720deg); opacity: 1; }}
-@keyframes flyAwayShrink {0% { transform: translate(500px,-500px) scale(1); opacity: 1; }100% { transform: translate(500px,-500px) scale(0); opacity: 0; }}
-
-/* responsive spotify */
-.spotify-container{width:100%;max-width:350px;margin:15px auto 0;display:none;transition:all 0.5s ease;}
-.spotify-container.show{display:block;}
-.spotify-container iframe{width:100%;height:85px;border-radius:12px;}
-
-/* small devices adjustments */
-@media(max-width:400px){.card{padding:20px;}.btn{padding:10px 20px;}}
-</style>
+<link rel="stylesheet" href="css/birthday.css">
 </head>
 <body>
 
@@ -115,7 +58,7 @@ body::before{content:'';position:fixed;width:200%;height:200%;background:radial-
 <div class="page" id="page6">
     <div class="card">
         <h2 id="giftTitle">Tap the Gift 🎁</h2>
-        <div id="giftBox" style="display:inline-block;font-size:clamp(5rem,18vw,9rem);cursor:pointer;" onclick="openGift()">🎁</div>
+        <div id="giftBox" class="cake" onclick="openGift()">🎁</div>
         <p id="giftText" class="typing"></p>
 
         <div class="spotify-container" id="spotify">
@@ -124,112 +67,6 @@ body::before{content:'';position:fixed;width:200%;height:200%;background:radial-
     </div>
 </div>
 
-<script>
-let currentPage = 1;
-let totalPages = 6;
-let typingFlags = {3:false,5:false,6:false};
-
-// Countdown
-function startCountdown(){
-    let count = 3;
-    let el = document.getElementById("count");
-    let i = setInterval(()=>{
-        el.textContent = count--;
-        if(count < 0){
-            clearInterval(i);
-            nextPage();
-        }
-    },1000);
-}
-
-// Page navigation
-function nextPage(){
-    document.getElementById("page"+currentPage).classList.remove("active");
-    document.getElementById("page"+currentPage).classList.add("prev");
-    currentPage++;
-    if(currentPage <= totalPages){
-        document.getElementById("page"+currentPage).classList.add("active");
-        // Start typings for pages 3 and 5 only when page active
-        if(currentPage === 3 && !typingFlags[3]){
-            startTypingMessage('message3','Happy 19th Birthday 💖 Wishing you a day filled with laughter, love, and unforgettable memories. May this year bring you endless joy, exciting adventures, and dreams coming true ✨','nextMsg3Btn',3);
-        }
-        if(currentPage === 5 && !typingFlags[5]){
-            startTypingMessage('typing',`Eden Ira, you are one of the most amazing people I’ve ever known. 
-Your smile lights up every room, your kindness touches every heart, and 
-your energy makes life feel magical. At 19, I know incredible adventures, 
-love, laughter, and growth are all waiting for you. Keep shining, keep dreaming, 
-and never forget how much you are loved and cherished. You make the world 
-a brighter place just by being in it, and I feel so lucky to celebrate this 
-special day with you. Happy Birthday! 💖✨🎉`,'nextTypingBtn',5);
-        }
-    }
-}
-
-// Cake click
-function changeCake(){
-    const cake = document.getElementById("cake");
-    cake.textContent = "🎂";
-    document.getElementById("nextCakeBtn").disabled = false;
-}
-
-// Gallery scroll check
-const gallery = document.getElementById("gallery");
-const nextGalleryBtn = document.getElementById("nextGalleryBtn");
-gallery.addEventListener("scroll", ()=>{
-    const scrollLeft = gallery.scrollLeft;
-    const maxScroll = gallery.scrollWidth - gallery.clientWidth;
-    nextGalleryBtn.disabled = scrollLeft < maxScroll - 1;
-});
-
-// Generic typing function
-function startTypingMessage(elId,message,btnId,flagId){
-    const el = document.getElementById(elId);
-    const btn = btnId ? document.getElementById(btnId) : null;
-    el.textContent = "";
-    let i=0;
-    function type(){
-        if(i<message.length){
-            el.textContent += message.charAt(i);
-            i++;
-            setTimeout(type,30);
-        } else {
-            if(btn) btn.disabled=false;
-            typingFlags[flagId] = true;
-            // Show Spotify after gift typing finishes
-            if(elId==='giftText'){
-                document.getElementById('spotify').classList.add('show');
-            }
-        }
-    }
-    type();
-}
-
-// Gift fly-away and start typing after fly-away
-function openGift(){
-    const giftBox = document.getElementById("giftBox");
-    const giftTitle = document.getElementById("giftTitle");
-    giftBox.classList.add("flyAway");
-
-    giftBox.addEventListener("animationend", ()=>{
-        giftBox.style.display="none"; 
-        giftTitle.textContent = "Hope you loved your surprise! 💕";
-        // Start typing after fly-away finishes
-        startTypingMessage('giftText','Surprise! 🎉 You are truly special and loved 💕','',6);
-    }, { once:true });
-}
-
-// Toggle dark mode
-function toggleTheme(){document.body.classList.toggle("dark");}
-
-// Swipe to next page
-let startX = 0;
-document.addEventListener("touchstart", e => startX = e.touches[0].clientX);
-document.addEventListener("touchend", e => {
-    let endX = e.changedTouches[0].clientX;
-    if(startX - endX > 60 && currentPage < totalPages) nextPage();
-});
-
-window.onload = startCountdown;
-</script>
+<script src="js/birthday.js"></script>
 </body>
 </html>
