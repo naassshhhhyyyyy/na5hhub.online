@@ -1,24 +1,39 @@
-// Loader: show exactly 3 seconds then hide smoothly
+// ======================
+// Loader: always show 3 seconds
+// ======================
 const loader = document.getElementById('loader');
-setTimeout(() => {
-  loader.classList.add('hidden'); // triggers CSS transition
-}, 3000); // 3 seconds
 
-// Quotes
+// Start loader immediately
+loader.style.opacity = '1';
+loader.style.pointerEvents = 'all';
+
+// Hide loader after exactly 3 seconds
+setTimeout(() => {
+  loader.classList.add('hidden'); // uses your CSS fade-out
+}, 3000);
+
+// ======================
+// Random Quote
+// ======================
 const quotes = [
   "Keep experimenting 🚀", 
   "Build cool things 💻", 
   "Stay creative 🎨", 
   "Make it happen ⚡"
 ];
-document.getElementById('quote').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+const quoteElement = document.getElementById('quote');
+quoteElement.innerText = quotes[Math.floor(Math.random() * quotes.length)];
 
+// ======================
 // Theme Toggle
+// ======================
+const toggle = document.getElementById('toggle');
+
 function toggleTheme() {
   document.body.classList.toggle('light');
-  document.getElementById('toggle').classList.toggle('rotate');
+  toggle.classList.toggle('rotate');
 
-  const icon = document.querySelector('.toggle i');
+  const icon = toggle.querySelector('i');
   if (document.body.classList.contains('light')) {
     icon.className = 'fas fa-sun';
   } else {
@@ -28,8 +43,8 @@ function toggleTheme() {
   localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
 }
 
-// Load saved theme
+// Load saved theme immediately
 if (localStorage.getItem('theme') === 'light') {
   document.body.classList.add('light');
-  document.querySelector('.toggle i').className = 'fas fa-sun';
+  toggle.querySelector('i').className = 'fas fa-sun';
 }
