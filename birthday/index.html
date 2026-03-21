@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Passcode</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  background: #1e293b;
+  padding: 25px;
+  border-radius: 15px;
+}
+
+h2 { margin-bottom: 20px; }
+
+.pin {
+  display: flex;
+  gap: 10px;
+}
+
+.pin input {
+  width: 100%;
+  aspect-ratio: 1/1;
+  font-size: 1.5rem;
+  text-align: center;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+}
+
+button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #22c55e;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+#message {
+  margin-top: 10px;
+  color: #f87171;
+  font-size: 0.9rem;
+}
+
+.loader {
+  margin: 20px auto;
+  border: 4px solid #334155;
+  border-top: 4px solid #22c55e;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+@media (min-width: 768px) {
+  .pin input { font-size: 2rem; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Enter Passcode</h2>
+
+  <div class="pin" id="pin">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
+  </div>
+
+  <button onclick="checkCode()">Unlock</button>
+  <p id="message"></p>
+</div>
+
+<script>
+// CONFIG
+let attempts = 0;
+const maxAttempts = 3;
+const redirectFail = "https://na5hhub.online";
+const redirectSuccess = "edenira.html";
+
+// encoded "123456"
+const secret = "MTIzNDU2";
+function decode() { return atob(secret); }
+
+const inputs = document.querySelectorAll("#pin input");
+const message = document.getElementById("message");
+
+// INPUT BEHAVIOR
+inputs.forEach((input, index) => {
+  input.addEventListener("input", () => {
+    input.value = input.value.replace(/[^0-9]/g, "");
+    if (input.value && index < inputs.length - 1) {
+      inputs[index + 1].focus();
+    }
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && !input.value && index > 0) {
+      inputs[index - 1].focus();
+    }
+  });
+
+  input.addEventListener("paste", e => e.preventDefault());
+});
+
+function getEnteredCode() {
+  let code = "";
+  inputs.forEach(i => code += i.value);
+  return code;
+}
+
+function clearInputs() {
+  inputs.forEach(i => i.value = "");
+  inputs[0].focus();
+}
+
+function showLoading() {
+  document.querySelector(".container").innerHTML = `
+    <h2>Verifying...</h2>
+    <div class="loader"></div>
+  `;
+}
+
+function checkCode() {
+  const entered = getEnteredCode();
+
+  if (entered.length !== 6) {
+    message.textContent = "Enter full 6-digit code";
+    return;
+  }
+
+  if (entered === decode()) {
+    showLoading();
+    setTimeout(() => {
+      window.location.href = redirectSuccess;
+    }, 2000); // fake 2s loading
+  } else {
+    attempts++;
+    message.textContent = "Incorrect passcode";
+
+    if (attempts >= maxAttempts) {
+      window.location.href = redirectFail;
+      return;
+    }
+
+    clearInputs();
+  }
+}
+</script>
+
+</body>
+</html>
