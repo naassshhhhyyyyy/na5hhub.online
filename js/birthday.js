@@ -101,12 +101,24 @@ document.addEventListener("touchend", e => {
 
 window.onload = startCountdown;
 
-if (sessionStorage.getItem("authenticated") !== "true") {
-    // Not authenticated → redirect to passcode
-    window.location.href = "/passcode";
+// Check if coming from passcode page
+  if (!sessionStorage.getItem("authenticated")) {
+    // Not coming from passcode page → redirect
+    window.location.href = "index.html";
   }
 
-  // Optional: clear authentication when tab/window closes
+  // Set a flag for refresh detection
+  if (sessionStorage.getItem("pageLoaded")) {
+    // Page was already loaded → refresh happened → require passcode again
+    sessionStorage.removeItem("authenticated");
+    window.location.href = "/passcode";
+  } else {
+    // First time load from passcode page
+    sessionStorage.setItem("pageLoaded", "true");
+  }
+
+  // Optional: clear pageLoaded when tab closes
   window.addEventListener("beforeunload", () => {
     sessionStorage.removeItem("authenticated");
+    sessionStorage.removeItem("pageLoaded");
   });
