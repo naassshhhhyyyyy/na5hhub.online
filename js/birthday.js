@@ -101,5 +101,12 @@ document.addEventListener("touchend", e => {
 
 window.onload = startCountdown;
 
-sessionStorage.removeItem("authenticated");
-window.location.href = "/passcode";
+if (sessionStorage.getItem("authenticated") !== "true") {
+    // Not authenticated → redirect to passcode
+    window.location.href = "/passcode";
+  }
+
+  // Optional: clear authentication when tab/window closes
+  window.addEventListener("beforeunload", () => {
+    sessionStorage.removeItem("authenticated");
+  });
