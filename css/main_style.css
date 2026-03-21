@@ -1,3 +1,6 @@
+/* --------------------------
+  Reset & Global Styles
+--------------------------- */
 * {
   margin: 0;
   padding: 0;
@@ -12,8 +15,12 @@ body {
   justify-content: center;
   color: #fff;
   transition: background 3s linear;
+  padding: 20px;
 }
 
+/* --------------------------
+  Container / Profile Card
+--------------------------- */
 .container {
   width: 100%;
   max-width: 420px;
@@ -45,6 +52,42 @@ h1 {
   opacity: 0.85;
 }
 
+/* --------------------------
+  Quotes
+--------------------------- */
+.quote {
+  margin-top: 20px;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* --------------------------
+  Footer
+--------------------------- */
+footer {
+  margin-top: 20px;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+/* --------------------------
+  Links Categories
+--------------------------- */
+.links-category {
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.links-category h2 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: #fff;
+  opacity: 0.9;
+}
+
+/* --------------------------
+  Links
+--------------------------- */
 .links {
   display: flex;
   flex-direction: column;
@@ -70,14 +113,17 @@ h1 {
   transform: translateY(-3px) scale(1.02);
 }
 
-.quote {
-  margin-top: 20px;
-  font-size: 0.85rem;
-  opacity: 0.8;
+/* --------------------------
+  Optional Category Colors
+--------------------------- */
+.links-category.social a:hover {
+  background: rgba(29, 155, 240, 0.35); /* Twitter blue example */
 }
 
-footer {
-  margin-top: 20px;
-  font-size: 0.75rem;
-  opacity: 0.6;
+.links-category.gaming a:hover {
+  background: rgba(255, 0, 128, 0.35); /* Gaming pink/purple */
+}
+
+.links-category.fun a:hover {
+  background: rgba(255, 215, 0, 0.35); /* Fun yellow */
 }
