@@ -1,6 +1,7 @@
 let currentPage = 1;
 let totalPages = 6;
 let typingFlags = {3:false,5:false,6:false};
+let cakeClicked = false;
 
 // Countdown
 function startCountdown(){
@@ -42,6 +43,12 @@ function changeCake(){
     const cake = document.getElementById("cake");
     cake.textContent = "🎂";
     document.getElementById("nextCakeBtn").disabled = false;
+
+    if (!cakeClicked) {
+        const song = document.getElementById('birthdaySong');
+        song.play();
+        cakeClicked = true;
+    }
 }
 
 // Gallery scroll check
