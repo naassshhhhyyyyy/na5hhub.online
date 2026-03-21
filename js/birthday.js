@@ -2,10 +2,6 @@ let currentPage = 1;
 let totalPages = 6;
 let typingFlags = {3:false,5:false,6:false};
 
-if (sessionStorage.getItem("authenticated") !== "true") {
-  window.location.href = "/passcode";
-}
-
 // Countdown
 function startCountdown(){
     let count = 3;
@@ -104,3 +100,6 @@ document.addEventListener("touchend", e => {
 });
 
 window.onload = startCountdown;
+
+sessionStorage.removeItem("authenticated");
+window.location.href = "/passcode";
