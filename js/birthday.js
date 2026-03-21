@@ -102,5 +102,5 @@ document.addEventListener("touchend", e => {
 window.onload = startCountdown;
 
 if (sessionStorage.getItem("authenticated") !== "true") {
-  window.location.href = "/birthday";
+  window.location.href = "/passcode";
 }
