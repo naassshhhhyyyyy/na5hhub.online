@@ -74,15 +74,16 @@ footer {
   Links Categories
 --------------------------- */
 .links-category {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   text-align: left;
 }
 
 .links-category h2 {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
+  font-size: 1rem; /* smaller, normal size */
+  margin-bottom: 8px;
   color: #fff;
   opacity: 0.9;
+  font-weight: 600;
 }
 
 /* --------------------------
