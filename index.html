@@ -3,23 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nash</title>
-<link rel="stylesheet" href="css/main_style.css">
+<title>Nash Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="css/main_style.css">
 </head>
+
 <body>
 
-<img class="profile-pic" src="../images/Gemini_Generated_Image_ulx94hulx94hulx9.png" alt="Profile Picture">
-<h1>Nash</h1>
-<p class="bio">Welcome! This is my playground hub. Links, experiments, and fun pages below.</p>
-
-<div class="link-buttons">
-  <!-- <a href="/birthday"><i class="fas fa-birthday-cake"></i> Eden's Birthday</a> -->
-  <a href="https://www.roblox.com/share?code=5343d2d26b529146b11e6cd262964e83&type=Profile&source=ProfileShare&stamp=1774008565472"><i class="fas fa-gamepad"></i> Roblox Profile</a>
-  <a href="https://discord.gg/"><i class="fas fa-comments"></i> Discord: 4shhy</a>
+<div class="loader" id="loader">
+  <div class="spinner"></div>
 </div>
 
-<footer>© 2026 na5hhub.online</footer>
+<div class="toggle" id="toggle" onclick="toggleTheme()">
+  <i class="fas fa-moon"></i>
+</div>
+
+<div class="container">
+  <img class="profile-pic" src="../images/Gemini_Generated_Image_ulx94hulx94hulx9.png" alt="Profile Picture">
+  <h1>Nash</h1>
+  <p class="bio">Welcome to my digital hub — experiments, links, and creative stuff.</p>
+
+  <div class="links">
+    <a href="https://www.roblox.com/share?code=5343d2d26b529146b11e6cd262964e83&type=Profile&source=ProfileShare&stamp=1774008565472">
+      <i class="fas fa-gamepad"></i> Roblox Profile
+    </a>
+
+    <a href="https://discord.gg/">
+      <i class="fas fa-comments"></i> Discord: 4shhy
+    </a>
+  </div>
+
+  <p id="quote" class="quote"></p>
+  <p id="counter" class="counter"></p>
+  
+  <footer>© 2026 na5hhub.online</footer>
+</div>
 
 <script src="js/main_script.js"></script>
 </body>
