@@ -1,51 +1,53 @@
-// Random Quote Widget
-const quotes = [
-  "Keep experimenting!",
-  "Code is fun!",
-  "Try new things.",
-  "Creativity matters."
-];
-
-function generateQuote() {
-  const random = quotes[Math.floor(Math.random() * quotes.length)];
-  document.getElementById('quote').innerText = random;
-}
-
-// Background Color Playground
-const colors = ['#ff7e5f','#feb47b','#6a11cb','#2575fc','#43cea2','#185a9d'];
-function changeColor() {
-  const color = colors[Math.floor(Math.random()*colors.length)];
-  document.body.style.background = color;
-}
-
-// === Anti Inspect / Anti DevTools ===
-
-// Disable right-click
-document.addEventListener('contextmenu', e => e.preventDefault());
-
-// Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-document.addEventListener('keydown', e => {
-    // F12
-    if (e.key === "F12") e.preventDefault();
-    // Ctrl+Shift+I (DevTools)
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "i") e.preventDefault();
-    // Ctrl+Shift+J (Console)
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "j") e.preventDefault();
-    // Ctrl+U (View source)
-    if (e.ctrlKey && e.key.toLowerCase() === "u") e.preventDefault();
+// Loader
+window.addEventListener('load',()=>{
+  document.getElementById('loader').classList.add('hidden');
 });
 
-// Detect if DevTools is open (basic)
-let devtools = false;
-setInterval(() => {
-    const widthThreshold = window.outerWidth - window.innerWidth > 160;
-    const heightThreshold = window.outerHeight - window.innerHeight > 160;
-    if (widthThreshold || heightThreshold) {
-        if (!devtools) {
-            devtools = true;
-            alert("DevTools detected! Please close it to continue.");
-        }
-    } else {
-        devtools = false;
-    }
-}, 1000);
+// Quotes
+const quotes=["Keep experimenting 🚀","Build cool things 💻","Stay creative 🎨","Make it happen ⚡"];
+document.getElementById('quote').innerText=
+  quotes[Math.floor(Math.random()*quotes.length)];
+
+// Theme Toggle
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  document.getElementById('toggle').classList.toggle('rotate');
+
+  const icon=document.querySelector('.toggle i');
+  if(document.body.classList.contains('light')){
+    icon.className='fas fa-sun';
+  }else{
+    icon.className='fas fa-moon';
+  }
+
+  localStorage.setItem('theme',document.body.classList.contains('light')?'light':'dark');
+}
+
+// Load saved theme
+if(localStorage.getItem('theme')==='light'){
+  document.body.classList.add('light');
+  document.querySelector('.toggle i').className='fas fa-sun';
+}
+
+// Visitor Counter (total visits)
+fetch('https://api.countapi.xyz/hit/na5hhub/visits')
+.then(res=>res.json())
+.then(data=>{
+  document.getElementById('counter').innerText=`Visitors: ${data.value}`;
+});
+
+// Live Viewers (approximate)
+fetch('https://api.countapi.xyz/hit/na5hhub/online')
+.then(res=>res.json())
+.then(data=>{
+  const liveEl = document.createElement('p');
+  liveEl.className = 'counter';
+  liveEl.id = 'live';
+  liveEl.innerText = `Live now: ${data.value}`;
+  document.querySelector('.container').appendChild(liveEl);
+});
+
+// decrement when leaving page
+window.addEventListener('beforeunload', () => {
+  navigator.sendBeacon('https://api.countapi.xyz/update/na5hhub/online?amount=-1');
+});
