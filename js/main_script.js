@@ -26,46 +26,7 @@ function toggleTheme(){
 if(localStorage.getItem('theme') === 'light'){
   document.body.classList.add('light');
   document.querySelector('.toggle i').className = 'fas fa-sun';
-}
-
-// Visitor Counter (total visits)
-fetch('https://api.countapi.xyz/hit/na5hhub/visits')
-.then(res => res.json())
-.then(data => {
-  document.getElementById('counter').innerText = `Visitors: ${data.value}`;
-});
-
-// Live Viewers (approximate)
-const sessionId = Date.now() + Math.random();
-
-// increment current viewers
-fetch('https://api.countapi.xyz/hit/na5hhub/online')
-.then(res => res.json())
-.then(data => {
-  const liveEl = document.createElement('p');
-  liveEl.className = 'counter';
-  liveEl.id = 'live';
-  liveEl.innerText = `Live now: ${data.value}`;
-  document.querySelector('.container').appendChild(liveEl);
-});
-
-// decrement when leaving page
-window.addEventListener('beforeunload', () => {
-  navigator.sendBeacon('https://api.countapi.xyz/update/na5hhub/online?amount=-1');
-});})
-.catch(err => console.log('CountAPI visits failed', err));
-
-// Live Viewers (approximate)
-fetch('https://api.countapi.xyz/hit/na5hhub/online')
-.then(res => res.json())
-.then(data => {
-  const liveEl = document.createElement('p');
-  liveEl.className = 'counter';
-  liveEl.id = 'live';
-  liveEl.innerText = `Live now: ${data.value}`;
-  document.querySelector('.container').appendChild(liveEl);
-})
-.catch(err => console.log('CountAPI live viewers failed', err));
+}.catch(err => console.log('CountAPI live viewers failed', err));
 
 // Decrement live viewers on unload
 window.addEventListener('beforeunload', () => {
