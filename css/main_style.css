@@ -11,17 +11,16 @@ body {
   align-items: center;
   justify-content: center;
   background: linear-gradient(-45deg, #ff5f6d, #ffc371, #47fced, #7351ff, #ff9a5b, #3a86ff, #ff3cac, #33ff77);
-  background-size: 1600% 1600%;
-  animation: gradientShift 30s ease infinite;
+  background-size: 1200% 1200%;
+  animation: gradientShift 25s linear infinite;
   color: #fff;
   transition: 0.3s;
+  will-change: background-position;
 }
 
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
-  25% { background-position: 50% 50%; }
   50% { background-position: 100% 50%; }
-  75% { background-position: 50% 50%; }
   100% { background-position: 0% 50%; }
 }
 
