@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake Game</title>
+<link rel="stylesheet" href="../css/snake.css">
+</head>
+<body>
+
+<h1>Snake Game</h1>
+
+<div class="menu" id="menuDiv">
+  <select id="levelSelect">
+    <option value="1">Level 1 - Easy</option>
+    <option value="2">Level 2 - Medium</option>
+    <option value="3">Level 3 - Hard</option>
+  </select>
+  <button id="startBtn">Start</button>
+</div>
+
+<div class="info-bar">
+  <div id="score">Score: 0</div>
+  <div id="level">Level: 1</div>
+</div>
+
+<div id="gameContainer">
+  <canvas id="gameCanvas"></canvas>
+</div>
+
+<div class="controls">
+  <button id="pauseBtn" style="display:none;">Pause</button>
+  <button id="restartBtn" style="display:none;">Restart</button>
+  <button id="menuBtn" style="display:none;">Menu</button>
+</div>
+
+<div class="controls" id="arrowControls">
+  <button onclick="changeDirection('up')">↑</button>
+  <button onclick="changeDirection('left')">←</button>
+  <button onclick="changeDirection('down')">↓</button>
+  <button onclick="changeDirection('right')">→</button>
+</div>
+
+<script src="../css/snake.js"></script>
+</body>
+</html>
