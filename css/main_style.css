@@ -48,7 +48,7 @@ h1 {
 .links {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 40px;
 }
 
 .links a {
@@ -71,7 +71,7 @@ h1 {
 }
 
 .quote {
-  margin-top: 20px;
+  margin-top: 0px;
   font-size: 0.85rem;
   opacity: 0.8;
 }
