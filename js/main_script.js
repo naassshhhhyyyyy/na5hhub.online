@@ -1,6 +1,8 @@
-// Loader
+// Loader: show for 3 seconds then hide
 window.addEventListener('load', () => {
-  document.getElementById('loader').classList.add('hidden');
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+  }, 3000); // 3000ms = 3 seconds
 });
 
 // Quotes
@@ -26,9 +28,4 @@ function toggleTheme(){
 if(localStorage.getItem('theme') === 'light'){
   document.body.classList.add('light');
   document.querySelector('.toggle i').className = 'fas fa-sun';
-}.catch(err => console.log('CountAPI live viewers failed', err));
-
-// Decrement live viewers on unload
-window.addEventListener('beforeunload', () => {
-  navigator.sendBeacon('https://api.countapi.xyz/update/na5hhub/online?amount=-1');
-});
+}
