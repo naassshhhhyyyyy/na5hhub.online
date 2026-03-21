@@ -10,9 +10,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(-45deg, #6a11cb, #2575fc, #43cea2, #185a9d);
+  background: linear-gradient(-45deg, #ff5f6d, #ffc371, #47fced, #7351ff, #ff9a5b, #3a86ff, #ff3cac, #33ff77);
   background-size: 1600% 1600%;
-  animation: gradientShift 20s ease infinite;
+  animation: gradientShift 30s ease infinite;
   color: #fff;
   transition: 0.3s;
 }
@@ -45,8 +45,16 @@ body {
   margin-bottom: 15px;
 }
 
-h1 { font-size: 1.8rem; margin-bottom: 8px; }
-.bio { font-size: 0.95rem; margin-bottom: 25px; opacity: 0.85; }
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.bio {
+  font-size: 0.95rem;
+  margin-bottom: 25px;
+  opacity: 0.85;
+}
 
 .links {
   display: flex;
@@ -73,5 +81,14 @@ h1 { font-size: 1.8rem; margin-bottom: 8px; }
   transform: translateY(-3px) scale(1.02);
 }
 
-.quote { margin-top: 20px; font-size: 0.85rem; opacity: 0.8; }
-footer { margin-top: 20px; font-size: 0.75rem; opacity: 0.6; }
+.quote {
+  margin-top: 20px;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+footer {
+  margin-top: 20px;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
