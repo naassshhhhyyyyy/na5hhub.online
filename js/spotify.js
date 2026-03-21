@@ -1,5 +1,5 @@
 const clientId = "d987c23e04b64a03952bb01858b6a3e3"; // Your Spotify Client ID
-const redirectUri = "https://spotify.com";            // Your redirect URI
+const redirectUri = "https://na5hhub.online/spotify";            // Your redirect URI
 const scopes = "user-read-currently-playing";
 
 // Elements
