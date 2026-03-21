@@ -1,4 +1,3 @@
-// Random Quote
 const quotes = [
   "Keep experimenting 🚀", 
   "Build cool things 💻", 
@@ -7,7 +6,6 @@ const quotes = [
 ];
 document.getElementById('quote').innerText = quotes[Math.floor(Math.random() * quotes.length)];
 
-// Theme Toggle
 const toggle = document.getElementById('toggle');
 
 window.toggleTheme = function() {
@@ -20,7 +18,6 @@ window.toggleTheme = function() {
   localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
 };
 
-// Load saved theme
 if (localStorage.getItem('theme') === 'light') {
   document.body.classList.add('light');
   toggle.querySelector('i').className = 'fas fa-sun';
