@@ -48,7 +48,7 @@ h1 {
 .links {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 12px;
 }
 
 .links a {
