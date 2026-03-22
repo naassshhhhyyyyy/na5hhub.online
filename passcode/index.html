@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nash | Passcode</title>
-<link rel="icon" type="image/png" href="../images/Gemini_Generated_Image_ulx94hulx94hulx9-modified.png">
-
 
 <style>
 * { box-sizing: border-box; }
@@ -29,8 +27,6 @@ body {
   padding: 25px;
   border-radius: 15px;
 }
-
-h2 { margin-bottom: 20px; }
 
 .pin {
   display: flex;
@@ -79,10 +75,6 @@ button {
 @keyframes spin {
   100% { transform: rotate(360deg); }
 }
-
-@media (min-width: 768px) {
-  .pin input { font-size: 2rem; }
-}
 </style>
 </head>
 
@@ -105,20 +97,37 @@ button {
 </div>
 
 <script>
-// CONFIG
+// 🔐 CONFIG (Base64 encoded)
+const DATA = {
+  birthday: {
+    code: "MDIyNzI2",
+    redirect: "/birthday"
+  },
+  snake: {
+    code: "MTExMTEx",
+    redirect: "/snake-game"
+  }
+};
+
+// settings
 let attempts = 0;
 const maxAttempts = 3;
 const redirectFail = "https://na5hhub.online";
-const redirectSuccess = "/birthday";
 
-// encoded "123456"
-const secret = "MDIyNzI2";
-function decode() { return atob(secret); }
+// get target (?target=snake)
+const params = new URLSearchParams(window.location.search);
+const target = params.get("target");
 
+// invalid page check
+if (!DATA[target]) {
+  document.body.innerHTML = "<h2 style='color:white;text-align:center'>Invalid page</h2>";
+}
+
+// elements
 const inputs = document.querySelectorAll("#pin input");
 const message = document.getElementById("message");
 
-// INPUT BEHAVIOR
+// input behavior
 inputs.forEach((input, index) => {
   input.addEventListener("input", () => {
     input.value = input.value.replace(/[^0-9]/g, "");
@@ -137,9 +146,7 @@ inputs.forEach((input, index) => {
 });
 
 function getEnteredCode() {
-  let code = "";
-  inputs.forEach(i => code += i.value);
-  return code;
+  return [...inputs].map(i => i.value).join("");
 }
 
 function clearInputs() {
@@ -154,6 +161,7 @@ function showLoading() {
   `;
 }
 
+// 🔓 MAIN LOGIC
 function checkCode() {
   const entered = getEnteredCode();
 
@@ -162,14 +170,16 @@ function checkCode() {
     return;
   }
 
-  if (entered === decode()) {
-    // ✅ Session storage for success
-    sessionStorage.setItem("authenticated", "true");
+  const realCode = atob(DATA[target].code);
+
+  if (entered === realCode) {
+    sessionStorage.setItem("auth_" + target, "true");
 
     showLoading();
     setTimeout(() => {
-      window.location.href = redirectSuccess;
+      window.location.href = DATA[target].redirect;
     }, 2000);
+
   } else {
     attempts++;
     message.textContent = "Incorrect passcode";
