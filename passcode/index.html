@@ -4,10 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nash | Passcode</title>
-
 <style>
 * { box-sizing: border-box; }
-
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -18,7 +16,6 @@ body {
   align-items: center;
   min-height: 100vh;
 }
-
 .container {
   width: 90%;
   max-width: 400px;
@@ -27,12 +24,10 @@ body {
   padding: 25px;
   border-radius: 15px;
 }
-
 .pin {
   display: flex;
   gap: 10px;
 }
-
 .pin input {
   width: 100%;
   aspect-ratio: 1/1;
@@ -42,7 +37,6 @@ body {
   border: none;
   outline: none;
 }
-
 button {
   margin-top: 20px;
   width: 100%;
@@ -54,14 +48,11 @@ button {
   font-size: 1rem;
   cursor: pointer;
 }
-
 #message {
   margin-top: 10px;
   color: #f87171;
   font-size: 0.9rem;
 }
-
-/* Spinner */
 .loader {
   margin: 20px auto;
   border: 4px solid #334155;
@@ -71,42 +62,29 @@ button {
   height: 40px;
   animation: spin 1s linear infinite;
 }
-
-@keyframes spin {
-  100% { transform: rotate(360deg); }
-}
+@keyframes spin { 100% { transform: rotate(360deg); } }
 </style>
 </head>
-
 <body>
-
 <div class="container">
   <h2>Enter Passcode</h2>
-
   <div class="pin" id="pin">
-    <input type="password" maxlength="1">
-    <input type="password" maxlength="1">
-    <input type="password" maxlength="1">
-    <input type="password" maxlength="1">
-    <input type="password" maxlength="1">
-    <input type="password" maxlength="1">
+    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="password" maxlength="1" inputmode="numeric">
   </div>
-
   <button onclick="checkCode()">Unlock</button>
   <p id="message"></p>
 </div>
 
 <script>
-// 🔐 CONFIG (Base64 encoded)
+// 🔐 CONFIG (Base64 encoded, folder redirects)
 const DATA = {
-  birthday: {
-    code: "MDIyNzI2",
-    redirect: "/birthday"
-  },
-  snake: {
-    code: "MTExMTEx",
-    redirect: "/snake-game"
-  }
+  birthday: { code: btoa("123456"), redirect: "/birthday/" },
+  snake: { code: btoa("111111"), redirect: "/snake-game/" }
 };
 
 // settings
@@ -114,12 +92,12 @@ let attempts = 0;
 const maxAttempts = 3;
 const redirectFail = "https://na5hhub.online";
 
-// get target (?target=snake)
+// get target from URL
 const params = new URLSearchParams(window.location.search);
 const target = params.get("target");
 
-// invalid page check
-if (!DATA[target]) {
+// show error if target missing or invalid
+if (!target || !DATA[target]) {
   document.body.innerHTML = "<h2 style='color:white;text-align:center'>Invalid page</h2>";
 }
 
@@ -131,68 +109,39 @@ const message = document.getElementById("message");
 inputs.forEach((input, index) => {
   input.addEventListener("input", () => {
     input.value = input.value.replace(/[^0-9]/g, "");
-    if (input.value && index < inputs.length - 1) {
-      inputs[index + 1].focus();
-    }
+    if (input.value && index < inputs.length - 1) inputs[index + 1].focus();
   });
-
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Backspace" && !input.value && index > 0) {
-      inputs[index - 1].focus();
-    }
+    if (e.key === "Backspace" && !input.value && index > 0) inputs[index - 1].focus();
   });
-
   input.addEventListener("paste", e => e.preventDefault());
 });
 
-function getEnteredCode() {
-  return [...inputs].map(i => i.value).join("");
-}
-
-function clearInputs() {
-  inputs.forEach(i => i.value = "");
-  inputs[0].focus();
-}
-
+function getEnteredCode() { return [...inputs].map(i => i.value).join(""); }
+function clearInputs() { inputs.forEach(i => i.value = ""); inputs[0].focus(); }
 function showLoading() {
-  document.querySelector(".container").innerHTML = `
-    <h2>Verifying...</h2>
-    <div class="loader"></div>
-  `;
+  document.querySelector(".container").innerHTML = `<h2>Verifying...</h2><div class="loader"></div>`;
 }
 
-// 🔓 MAIN LOGIC
 function checkCode() {
-  const entered = getEnteredCode();
+  if (!DATA[target]) return; // safety check
 
-  if (entered.length !== 6) {
-    message.textContent = "Enter full 6-digit code";
-    return;
-  }
+  const entered = getEnteredCode();
+  if (entered.length !== 6) { message.textContent = "Enter full 6-digit code"; return; }
 
   const realCode = atob(DATA[target].code);
 
   if (entered === realCode) {
     sessionStorage.setItem("auth_" + target, "true");
-
     showLoading();
-    setTimeout(() => {
-      window.location.href = DATA[target].redirect;
-    }, 2000);
-
+    setTimeout(() => { window.location.href = DATA[target].redirect; }, 1500);
   } else {
     attempts++;
     message.textContent = "Incorrect passcode";
-
-    if (attempts >= maxAttempts) {
-      window.location.href = redirectFail;
-      return;
-    }
-
+    if (attempts >= maxAttempts) { window.location.href = redirectFail; return; }
     clearInputs();
   }
 }
 </script>
-
 </body>
 </html>
