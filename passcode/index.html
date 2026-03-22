@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nash | Passcode</title>
+<link rel="icon" type="image/png" href="../images/Gemini_Generated_Image_ulx94hulx94hulx9-modified.png">
 <style>
 * { box-sizing: border-box; }
 body {
@@ -24,6 +25,7 @@ body {
   padding: 25px;
   border-radius: 15px;
 }
+h2 { margin-bottom: 20px; }
 .pin {
   display: flex;
   gap: 10px;
@@ -63,9 +65,13 @@ button {
   animation: spin 1s linear infinite;
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
+@media (min-width: 768px) {
+  .pin input { font-size: 2rem; }
+}
 </style>
 </head>
 <body>
+
 <div class="container">
   <h2>Enter Passcode</h2>
   <div class="pin" id="pin">
@@ -81,24 +87,30 @@ button {
 </div>
 
 <script>
-// 🔐 CONFIG (Base64 encoded, folder redirects)
-const DATA = {
-  birthday: { code: btoa("123456"), redirect: "/birthday/" },
-  snake: { code: btoa("111111"), redirect: "/snake-game/" }
+// ⚡ CONFIG: multiple websites/folders with own passcode
+const SITES = {
+  birthday: {
+    code: btoa("123456"),   // Base64 encoded PIN
+    redirect: "/birthday/"   // Folder path
+  },
+  snakegame: {
+    code: btoa("111111"),
+    redirect: "/snake-game/"
+  },
 };
 
-// settings
+// track attempts
 let attempts = 0;
 const maxAttempts = 3;
 const redirectFail = "https://na5hhub.online";
 
-// get target from URL
+// get target from URL: ?site=birthday
 const params = new URLSearchParams(window.location.search);
-const target = params.get("target");
+const siteKey = params.get("site");
 
-// show error if target missing or invalid
-if (!target || !DATA[target]) {
-  document.body.innerHTML = "<h2 style='color:white;text-align:center'>Invalid page</h2>";
+// validate target
+if (!siteKey || !SITES[siteKey]) {
+  document.body.innerHTML = "<h2 style='color:white;text-align:center'>Invalid site</h2>";
 }
 
 // elements
@@ -119,22 +131,20 @@ inputs.forEach((input, index) => {
 
 function getEnteredCode() { return [...inputs].map(i => i.value).join(""); }
 function clearInputs() { inputs.forEach(i => i.value = ""); inputs[0].focus(); }
-function showLoading() {
-  document.querySelector(".container").innerHTML = `<h2>Verifying...</h2><div class="loader"></div>`;
-}
+function showLoading() { document.querySelector(".container").innerHTML = `<h2>Verifying...</h2><div class="loader"></div>`; }
 
 function checkCode() {
-  if (!DATA[target]) return; // safety check
+  if (!SITES[siteKey]) return; // safety check
 
   const entered = getEnteredCode();
   if (entered.length !== 6) { message.textContent = "Enter full 6-digit code"; return; }
 
-  const realCode = atob(DATA[target].code);
+  const realCode = atob(SITES[siteKey].code);
 
   if (entered === realCode) {
-    sessionStorage.setItem("auth_" + target, "true");
+    sessionStorage.setItem("auth_" + siteKey, "true");
     showLoading();
-    setTimeout(() => { window.location.href = DATA[target].redirect; }, 1500);
+    setTimeout(() => { window.location.href = SITES[siteKey].redirect; }, 1500);
   } else {
     attempts++;
     message.textContent = "Incorrect passcode";
@@ -143,5 +153,6 @@ function checkCode() {
   }
 }
 </script>
+
 </body>
 </html>
