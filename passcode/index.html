@@ -71,89 +71,88 @@ button {
 </style>
 </head>
 <body>
-
 <div class="container">
   <h2>Enter Passcode</h2>
   <div class="pin" id="pin">
-    <input type="password" maxlength="1" inputmode="numeric">
-    <input type="password" maxlength="1" inputmode="numeric">
-    <input type="password" maxlength="1" inputmode="numeric">
-    <input type="password" maxlength="1" inputmode="numeric">
-    <input type="password" maxlength="1" inputmode="numeric">
-    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
+    <input type="password" maxlength="1">
   </div>
   <button onclick="checkCode()">Unlock</button>
   <p id="message"></p>
 </div>
 
 <script>
-// ⚡ CONFIG: multiple websites/folders with own passcode
-const SITES = {
-  birthday: {
-    code: btoa("123456"),   // Base64 encoded PIN
-    redirect: "/birthday"   // Folder path
-  },
-  snakegame: {
-    code: btoa("111111"),
-    redirect: "/snake-game"
-  },
-};
+// ✅ CONFIG: Passcodes in Base64
+const passcodes = [
+  { code: "MTIzNDU2", redirect: "/birthday" },    // "123456"
+  { code: "NjU0MzIx", redirect: "/snake-game" }  // "654321"
+];
 
-// track attempts
 let attempts = 0;
 const maxAttempts = 3;
 const redirectFail = "https://na5hhub.online";
 
-// get target from URL: ?site=birthday
-const params = new URLSearchParams(window.location.search);
-// automatically get folder name as siteKey
-let siteKey = window.location.pathname.split("/").filter(Boolean).pop();
-
-// e.g., "/birthday/" → siteKey = "birthday"
-if (!SITES[siteKey]) {
-  document.body.innerHTML = "<h2 style='color:white;text-align:center'>Invalid page</h2>";
-}
-  
-// elements
 const inputs = document.querySelectorAll("#pin input");
 const message = document.getElementById("message");
 
-// input behavior
+// Input behavior
 inputs.forEach((input, index) => {
   input.addEventListener("input", () => {
     input.value = input.value.replace(/[^0-9]/g, "");
     if (input.value && index < inputs.length - 1) inputs[index + 1].focus();
   });
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Backspace" && !input.value && index > 0) inputs[index - 1].focus();
+  input.addEventListener("keydown", e => {
+    if (e.key === "Backspace" && !input.value && index > 0) {
+      inputs[index - 1].focus();
+    }
   });
   input.addEventListener("paste", e => e.preventDefault());
 });
 
-function getEnteredCode() { return [...inputs].map(i => i.value).join(""); }
-function clearInputs() { inputs.forEach(i => i.value = ""); inputs[0].focus(); }
-function showLoading() { document.querySelector(".container").innerHTML = `<h2>Verifying...</h2><div class="loader"></div>`; }
+function getEnteredCode() {
+  let code = "";
+  inputs.forEach(i => code += i.value);
+  return code;
+}
+
+function clearInputs() {
+  inputs.forEach(i => i.value = "");
+  inputs[0].focus();
+}
+
+function showLoading() {
+  document.querySelector(".container").innerHTML =
+    `<h2>Verifying...</h2>
+     <div class="loader"></div>`;
+}
 
 function checkCode() {
-  if (!SITES[siteKey]) return; // safety check
-
   const entered = getEnteredCode();
-  if (entered.length !== 6) { message.textContent = "Enter full 6-digit code"; return; }
+  if (entered.length !== 6) {
+    message.textContent = "Enter full 6-digit code";
+    return;
+  }
 
-  const realCode = atob(SITES[siteKey].code);
-
-  if (entered === realCode) {
-    sessionStorage.setItem("auth_" + siteKey, "true");
+  // Check against Base64 codes
+  const match = passcodes.find(p => entered === atob(p.code));
+  if (match) {
+    sessionStorage.setItem("authenticated", "true");
     showLoading();
-    setTimeout(() => { window.location.href = SITES[siteKey].redirect; }, 1500);
+    setTimeout(() => { window.location.href = match.redirect; }, 2000);
   } else {
     attempts++;
     message.textContent = "Incorrect passcode";
-    if (attempts >= maxAttempts) { window.location.href = redirectFail; return; }
+    if (attempts >= maxAttempts) {
+      window.location.href = redirectFail;
+      return;
+    }
     clearInputs();
   }
 }
 </script>
-
 </body>
 </html>
