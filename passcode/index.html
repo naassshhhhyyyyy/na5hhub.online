@@ -91,11 +91,11 @@ button {
 const SITES = {
   birthday: {
     code: btoa("123456"),   // Base64 encoded PIN
-    redirect: "/birthday/"   // Folder path
+    redirect: "/birthday"   // Folder path
   },
   snakegame: {
     code: btoa("111111"),
-    redirect: "/snake-game/"
+    redirect: "/snake-game"
   },
 };
 
@@ -106,13 +106,14 @@ const redirectFail = "https://na5hhub.online";
 
 // get target from URL: ?site=birthday
 const params = new URLSearchParams(window.location.search);
-const siteKey = params.get("site");
+// automatically get folder name as siteKey
+let siteKey = window.location.pathname.split("/").filter(Boolean).pop();
 
-// validate target
-if (!siteKey || !SITES[siteKey]) {
-  document.body.innerHTML = "<h2 style='color:white;text-align:center'>Invalid site</h2>";
+// e.g., "/birthday/" → siteKey = "birthday"
+if (!SITES[siteKey]) {
+  document.body.innerHTML = "<h2 style='color:white;text-align:center'>Invalid page</h2>";
 }
-
+  
 // elements
 const inputs = document.querySelectorAll("#pin input");
 const message = document.getElementById("message");
