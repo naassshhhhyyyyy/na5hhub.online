@@ -109,18 +109,18 @@ document.addEventListener("touchend", e => {
 window.onload = startCountdown;
 
 // Check if user is authenticated
-  if (sessionStorage.getItem("authenticated") !== "true") {
+  if (sessionStorage.getItem("auth_birthday") !== "true") {
     window.location.href = "/passcode"; // not authenticated → redirect
   }
 
   // Detect page reload
   if (performance.getEntriesByType("navigation")[0].type === "reload") {
     // Page refreshed → force passcode again
-    sessionStorage.removeItem("authenticated");
+    sessionStorage.removeItem("auth_birthday");
     window.location.href = "/passcode";
   }
 
   // Optional: clear authentication on tab close
   window.addEventListener("beforeunload", () => {
-    sessionStorage.removeItem("authenticated");
+    sessionStorage.removeItem("auth_birthday");
   });
