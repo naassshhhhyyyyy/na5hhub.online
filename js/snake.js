@@ -179,18 +179,18 @@ menuBtn.addEventListener('click',()=>{
 window.addEventListener('resize',()=>{ initGame(false); });
 
 // Check if user is authenticated
-  if (sessionStorage.getItem("auth_snake") !== "true") {
+  if (sessionStorage.getItem("authenticated") !== "true") {
     window.location.href = "/passcode"; // not authenticated → redirect
   }
 
   // Detect page reload
   if (performance.getEntriesByType("navigation")[0].type === "reload") {
     // Page refreshed → force passcode again
-    sessionStorage.removeItem("auth_snake");
+    sessionStorage.removeItem("authenticated");
     window.location.href = "/passcode";
   }
 
   // Optional: clear authentication on tab close
   window.addEventListener("beforeunload", () => {
-    sessionStorage.removeItem("auth_snake");
+    sessionStorage.removeItem("authenticated");
   });
