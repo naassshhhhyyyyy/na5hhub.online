@@ -144,17 +144,6 @@ footer {
   transform: translateY(-3px) scale(1.02);
 }
 
-/* --------------------------
-  Optional Category Colors
---------------------------- */
-.links-category.social a:hover {
-  background: rgba(29, 155, 240, 0.35); /* Twitter blue example */
-}
-
-.links-category.gaming a:hover {
-  background: rgba(255, 0, 128, 0.35); /* Gaming pink/purple */
-}
-
 .links-category.fun a:hover {
   background: rgba(255, 215, 0, 0.35); /* Fun yellow */
 }
