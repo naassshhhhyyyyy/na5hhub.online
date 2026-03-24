@@ -132,7 +132,9 @@ body::before{
 
 .gallery img{
     /*width:clamp(80px,30vw,150px);*/
-    width:auto;
+    width: auto;
+    max-width: 150px;
+    min-width: 80px;
     border-radius:15px;
 }
 
