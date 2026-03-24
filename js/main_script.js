@@ -28,8 +28,8 @@ setInterval(setSmoothRainbowGradient, 30);
 function updateClock() {
   const now = new Date();
 
-  // Convert to Philippine Time (UTC+8)
-  const options = {
+  // Philippine Time options
+  const timeOptions = {
     timeZone: 'Asia/Manila',
     hour: '2-digit',
     minute: '2-digit',
@@ -37,9 +37,18 @@ function updateClock() {
     hour12: true
   };
 
-  const timeString = new Intl.DateTimeFormat('en-US', options).format(now);
+  const dateOptions = {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short'
+  };
 
-  document.getElementById('clock').innerText = `🇵🇭 ${timeString} (Philippine Time)`;
+  const timeString = new Intl.DateTimeFormat('en-US', timeOptions).format(now);
+  const dateString = new Intl.DateTimeFormat('en-US', dateOptions).format(now);
+
+  document.getElementById('clock').innerText = `🇵🇭 ${timeString} — ${dateString}`;
 }
 
 // update every second
