@@ -14,8 +14,41 @@ body {
   align-items: center;
   justify-content: center;
   color: #fff;
-  transition: background 3s linear;
   padding: 20px;
+
+  /* Rainbow gradient */
+  background: linear-gradient(
+    -45deg,
+    red,
+    orange,
+    yellow,
+    green,
+    blue,
+    indigo,
+    violet
+  );
+  background-size: 400% 400%;
+
+  animation: gradientShift 12s ease infinite;
+}
+
+/* Smooth animation */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 50% 100%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  75% {
+    background-position: 50% 0%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* --------------------------
