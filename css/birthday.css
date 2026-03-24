@@ -31,15 +31,25 @@ body::before{content:'';position:fixed;width:200%;height:200%;background:radial-
 .btn:disabled{opacity:0.5;cursor:not-allowed;}
 
 /* gallery */
-.gallery{display:flex;gap:10px;overflow-x:auto;padding:10px;scroll-behavior:smooth;}
-.gallery img {
-    width: clamp(80px, 30vw, 150px);
-    height: auto;           /* Maintain aspect ratio */
-    max-height: 150px;      /* Optional: limit height */
-    border-radius: 15px;
-    object-fit: cover;      /* Ensures image covers container nicely */
+/* .gallery{display:flex;gap:10px;overflow-x:auto;padding:10px;scroll-behavior:smooth;}
+.gallery img{width:clamp(80px,30vw,150px);border-radius:15px;} */
+.gallery {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px;
+    scroll-behavior: smooth;
+    align-items: flex-start; /* Prevent stretching to container height */
 }
 
+.gallery img {
+    width: clamp(80px, 30vw, 150px);
+    height: auto;            /* Keep aspect ratio */
+    max-height: 150px;       /* Optional max height */
+    border-radius: 15px;
+    flex-shrink: 0;          /* Prevent shrinking */
+    object-fit: contain;     /* Fit inside box without stretching */
+}
 /* typing */
 .typing{font-size:clamp(0.9rem,3vw,1.1rem);line-height:1.6;text-align:center;max-height:300px;overflow-y:auto;padding:10px;}
 .typing::after{content:'|';animation:blink 1s infinite;}
