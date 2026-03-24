@@ -32,7 +32,13 @@ body::before{content:'';position:fixed;width:200%;height:200%;background:radial-
 
 /* gallery */
 .gallery{display:flex;gap:10px;overflow-x:auto;padding:10px;scroll-behavior:smooth;}
-.gallery img{width:clamp(80px,30vw,150px);border-radius:15px;}
+.gallery img {
+    width: clamp(80px, 30vw, 150px);
+    height: auto;           /* Maintain aspect ratio */
+    max-height: 150px;      /* Optional: limit height */
+    border-radius: 15px;
+    object-fit: cover;      /* Ensures image covers container nicely */
+}
 
 /* typing */
 .typing{font-size:clamp(0.9rem,3vw,1.1rem);line-height:1.6;text-align:center;max-height:300px;overflow-y:auto;padding:10px;}
