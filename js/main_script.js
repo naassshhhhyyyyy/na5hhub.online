@@ -24,3 +24,24 @@ function setSmoothRainbowGradient() {
 
 // run smoothly (60fps)
 setInterval(setSmoothRainbowGradient, 30);
+
+function updateClock() {
+  const now = new Date();
+
+  // Convert to Philippine Time (UTC+8)
+  const options = {
+    timeZone: 'Asia/Manila',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  };
+
+  const timeString = new Intl.DateTimeFormat('en-US', options).format(now);
+
+  document.getElementById('clock').innerText = `🇵🇭 ${timeString} (Philippine Time)`;
+}
+
+// update every second
+setInterval(updateClock, 1000);
+updateClock();
