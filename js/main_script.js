@@ -77,3 +77,15 @@ setInterval(() => {
   setSmoothRainbowGradient();
   updateTextColor();
 }, 30);
+
+document.querySelectorAll('.links a').forEach(link => {
+  link.addEventListener('mouseenter', () => {
+    // Use opposite color of current body text
+    link.style.color = document.body.style.color === '#fff' ? '#000' : '#fff';
+    link.style.textShadow = `0 0 6px ${link.style.color}, 0 0 10px ${link.style.color}`;
+  });
+  link.addEventListener('mouseleave', () => {
+    link.style.color = '';
+    link.style.textShadow = '';
+  });
+});
