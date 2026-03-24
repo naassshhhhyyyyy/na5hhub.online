@@ -38,18 +38,14 @@ body::before{content:'';position:fixed;width:200%;height:200%;background:radial-
     gap: 10px;
     overflow-x: auto;
     padding: 10px;
-    scroll-behavior: smooth;
-    align-items: flex-start; /* Prevent stretching to tallest item */
+    align-items: center;
 }
 
 .gallery img {
-    width: auto;           /* Let the image width be automatic */
-    max-width: 150px;      /* Limit maximum width */
-    height: auto;          /* Maintain aspect ratio */
-    max-height: 150px;     /* Optional: limit maximum height */
+    height: 120px;     /* fixed height */
+    width: auto;       /* auto width = keeps aspect ratio */
     border-radius: 15px;
-    flex-shrink: 0;        /* Prevent shrinking in flex container */
-    object-fit: contain;   /* Fit image inside box without stretching */
+    flex-shrink: 0;
 }
 
 /* typing */
