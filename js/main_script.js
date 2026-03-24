@@ -54,3 +54,26 @@ function updateClock() {
 // update every second
 setInterval(updateClock, 1000);
 updateClock();
+
+function updateTextColor() {
+  // Get computed background from body
+  const bg = window.getComputedStyle(document.body).backgroundImage;
+
+  // We'll approximate brightness using the hue (from your rainbow gradient)
+  const colorRegex = /hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/g;
+  const matches = [...bg.matchAll(colorRegex)];
+  if (matches.length) {
+    let totalLightness = 0;
+    matches.forEach(m => totalLightness += parseInt(m[3]));
+    const avgLightness = totalLightness / matches.length;
+
+    // If light, use dark text, else white text
+    document.body.style.color = avgLightness > 60 ? '#000' : '#fff';
+  }
+}
+
+// Run every time gradient updates
+setInterval(() => {
+  setSmoothRainbowGradient();
+  updateTextColor();
+}, 30);
