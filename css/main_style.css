@@ -16,7 +16,6 @@ body {
   color: #fff;
   padding: 20px;
 
-  /* Rainbow gradient */
   background: linear-gradient(
     -45deg,
     red,
@@ -27,28 +26,14 @@ body {
     indigo,
     violet
   );
-  background-size: 400% 400%;
-
-  animation: gradientShift 12s ease infinite;
+  background-size: 300% 300%;
+  animation: gradientShift 6s linear infinite;
 }
 
-/* Smooth animation */
 @keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  25% {
-    background-position: 50% 100%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  75% {
-    background-position: 50% 0%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* --------------------------
