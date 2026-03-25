@@ -57,7 +57,7 @@ const nextGalleryBtn = document.getElementById("nextGalleryBtn");
 gallery.addEventListener("scroll", ()=>{
     const scrollLeft = gallery.scrollLeft;
     const maxScroll = gallery.scrollWidth - gallery.clientWidth;
-    nextGalleryBtn.disabled = scrollLeft < maxScroll - 3;
+    nextGalleryBtn.disabled = scrollLeft < maxScroll - 6;
 });
 
 const gallery = document.getElementById("gallery");
