@@ -60,21 +60,25 @@ function changeCake(){
 //    nextGalleryBtn.disabled = scrollLeft < maxScroll - 1;
 //});
 
-const gallery = document.getElementById("gallery");
-const nextGalleryBtn = document.getElementById("nextGalleryBtn");
+//const gallery = document.getElementById("gallery");
+//const nextGalleryBtn = document.getElementById("nextGalleryBtn");
 
-function checkGalleryScroll() {
-    const maxScroll = gallery.scrollWidth - gallery.clientWidth;
+//function checkGalleryScroll() {
+ //   const maxScroll = gallery.scrollWidth - gallery.clientWidth;
 
     // If no scroll needed → enable button immediately
-    if (maxScroll <= 0) {
-        nextGalleryBtn.disabled = false;
-        return;
-    }
+//    if (maxScroll <= 0) {
+//        nextGalleryBtn.disabled = false;
+//        return;
+//    }
 
     // Enable only when user reaches end
-    nextGalleryBtn.disabled = gallery.scrollLeft < maxScroll - 1;
-}
+//    nextGalleryBtn.disabled = gallery.scrollLeft < maxScroll - 1;
+//}
+
+window.addEventListener("load", () => {
+    document.getElementById("nextGalleryBtn").disabled = false;
+});
 
 // Run on scroll
 gallery.addEventListener("scroll", checkGalleryScroll);
