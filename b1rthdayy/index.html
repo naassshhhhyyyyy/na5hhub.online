@@ -29,7 +29,7 @@
 <!-- Page 3: Short Message typing -->
 <div class="page" id="page3">
   <div class="card">
-    <h2 id="message3" class="typing"></h2>
+    <div id="message3" class="typing"></div>
     <button class="btn" id="nextMsg3Btn" disabled>Next</button>
   </div>
 </div>
@@ -39,7 +39,6 @@
   <div class="card">
     <h2>Memories 📸</h2>
     <div class="gallery" id="gallery">
-      <!-- Using placeholder images since original paths may not exist -->
       <img src="https://picsum.photos/id/20/150/150" alt="Memory 1">
       <img src="https://picsum.photos/id/30/150/150" alt="Memory 2">
       <img src="https://picsum.photos/id/40/150/150" alt="Memory 3">
@@ -64,7 +63,7 @@
   <div class="card">
     <h2 id="giftTitle">Tap the Gift 🎁</h2>
     <div id="giftBox" class="gift-box">🎁</div>
-    <p id="giftText" class="typing-gift"></p>
+    <div id="giftText" class="typing-gift"></div>
     <div class="spotify-container" id="spotifyContainer">
       <iframe src="https://open.spotify.com/embed/track/1udOOSbJnytCdgvbgYOF5s?utm_source=generator" allow="encrypted-media" loading="lazy"></iframe>
     </div>
@@ -74,22 +73,6 @@
 <audio id="birthdaySong" preload="auto">
   <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
 </audio>
-
-<script src="../js/birthday.js"></script>
-</body>
-</html><div class="page" id="page6">
-    <div class="card">
-        <h2 id="giftTitle">Tap the Gift 🎁</h2>
-        <div id="giftBox" class="cake" onclick="openGift()">🎁</div>
-        <p id="giftText" class="typing"></p>
-
-        <div class="spotify-container" id="spotify">
-            <iframe src="https://open.spotify.com/embed/track/1udOOSbJnytCdgvbgYOF5s"></iframe>
-        </div>
-    </div>
-</div>
-
-<audio id="birthdaySong" src="../audio/chamber-music.mp3"></audio>
 
 <script src="../js/birthday.js"></script>
 </body>
