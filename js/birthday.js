@@ -60,9 +60,6 @@ gallery.addEventListener("scroll", ()=>{
     nextGalleryBtn.disabled = scrollLeft < maxScroll - 20;
 });
 
-const gallery = document.getElementById("gallery");
-const nextGalleryBtn = document.getElementById("nextGalleryBtn");
-
 function checkGalleryScroll() {
     const maxScroll = gallery.scrollWidth - gallery.clientWidth;
 
