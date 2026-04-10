@@ -20,7 +20,7 @@ const spotifyContainer = document.getElementById('spotifyContainer');
 const birthdaySong = document.getElementById('birthdaySong');
 const themeToggleBtn = document.getElementById('themeToggle');
 
-// ========== SIMPLIFIED PAGE TRANSITION (FIXED) ==========
+// ========== PAGE TRANSITION ==========
 function goToPage(pageNum) {
   if (pageNum > totalPages) return;
   
@@ -58,7 +58,7 @@ function nextPage() {
   goToPage(currentPage + 1);
 }
 
-// ========== COUNTDOWN - FIXED (hindi na stuck) ==========
+// ========== COUNTDOWN ==========
 function startCountdown() {
   let count = 3;
   countEl.textContent = count;
@@ -72,7 +72,6 @@ function startCountdown() {
     
     if (count < 0) {
       clearInterval(timer);
-      // Move to cake page (page 2)
       goToPage(2);
     }
   }, 1000);
@@ -92,14 +91,12 @@ function startTyping(elementId, message, btnId, flagKey) {
       i++;
       setTimeout(typeChar, 30);
     } else {
-      // Typing done
       if (btnId) {
         const btn = document.getElementById(btnId);
         if (btn) btn.disabled = false;
       }
       typingFlags[flagKey] = true;
       
-      // For gift page, show Spotify
       if (flagKey === 6 && spotifyContainer) {
         spotifyContainer.classList.add('show');
       }
@@ -109,14 +106,24 @@ function startTyping(elementId, message, btnId, flagKey) {
   typeChar();
 }
 
-// ========== CAKE CLICK ==========
-function handleCakeClick() {
+// ========== CAKE CLICK - FIXED for desktop ==========
+function handleCakeClick(e) {
+  // Para sa desktop at mobile pareho
+  e.stopPropagation();
+  
   if (cakeDiv.textContent === "🧁") {
     cakeDiv.textContent = "🎂";
     nextCakeBtn.disabled = false;
     
     if (!cakeClicked) {
-      birthdaySong.play().catch(e => console.log("Click first to play audio"));
+      birthdaySong.play().catch(err => {
+        console.log("Auto-play prevented. User will click first.");
+        // Try to play on user interaction
+        document.body.addEventListener('click', function playOnce() {
+          birthdaySong.play().catch(() => {});
+          document.body.removeEventListener('click', playOnce);
+        }, { once: true });
+      });
       cakeClicked = true;
     }
   }
@@ -137,8 +144,10 @@ function checkGalleryScroll() {
   nextGalleryBtn.disabled = !atEnd;
 }
 
-// ========== GIFT OPEN ==========
-function handleGiftOpen() {
+// ========== GIFT OPEN - FIXED for desktop ==========
+function handleGiftOpen(e) {
+  e.stopPropagation();
+  
   if (!giftBox || giftBox.classList.contains('flyAway')) return;
   
   giftBox.classList.add('flyAway');
@@ -162,8 +171,10 @@ function toggleTheme() {
   themeToggleBtn.textContent = document.body.classList.contains('dark') ? "☀️" : "🌙";
 }
 
-// ========== SWIPE GESTURE ==========
+// ========== SWIPE GESTURE (mobile) + KEYBOARD (desktop) ==========
 let touchStart = 0;
+
+// Mobile swipe
 document.addEventListener('touchstart', (e) => {
   touchStart = e.touches[0].clientX;
 });
@@ -176,22 +187,57 @@ document.addEventListener('touchend', (e) => {
   }
 });
 
-// ========== EVENT LISTENERS ==========
-cakeDiv.addEventListener('click', handleCakeClick);
-nextCakeBtn.addEventListener('click', nextPage);
-nextMsg3Btn.addEventListener('click', nextPage);
-nextGalleryBtn.addEventListener('click', nextPage);
-nextTypingBtn.addEventListener('click', nextPage);
-giftBox.addEventListener('click', handleGiftOpen);
-themeToggleBtn.addEventListener('click', toggleTheme);
+// Desktop keyboard - arrow keys
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    e.preventDefault();
+  }
+  
+  if (e.key === 'ArrowRight' && currentPage < totalPages) {
+    // Check if current page button is enabled before allowing keyboard next
+    let canProceed = true;
+    
+    if (currentPage === 2 && nextCakeBtn.disabled) canProceed = false;
+    if (currentPage === 3 && nextMsg3Btn.disabled) canProceed = false;
+    if (currentPage === 4 && nextGalleryBtn.disabled) canProceed = false;
+    if (currentPage === 5 && nextTypingBtn.disabled) canProceed = false;
+    
+    if (canProceed) {
+      nextPage();
+    }
+  }
+});
 
+// ========== EVENT LISTENERS - gumagana sa desktop at mobile ==========
+// Cake - click para sa desktop at mobile
+if (cakeDiv) {
+  cakeDiv.addEventListener('click', handleCakeClick);
+  cakeDiv.addEventListener('touchstart', handleCakeClick); // dagdag para sure sa mobile
+}
+
+// Next buttons
+if (nextCakeBtn) nextCakeBtn.addEventListener('click', nextPage);
+if (nextMsg3Btn) nextMsg3Btn.addEventListener('click', nextPage);
+if (nextGalleryBtn) nextGalleryBtn.addEventListener('click', nextPage);
+if (nextTypingBtn) nextTypingBtn.addEventListener('click', nextPage);
+
+// Gift box
+if (giftBox) {
+  giftBox.addEventListener('click', handleGiftOpen);
+  giftBox.addEventListener('touchstart', handleGiftOpen);
+}
+
+// Theme toggle
+if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
+
+// Gallery scroll
 if (gallery) {
   gallery.addEventListener('scroll', checkGalleryScroll);
+  gallery.addEventListener('touchmove', checkGalleryScroll);
   window.addEventListener('resize', () => setTimeout(checkGalleryScroll, 100));
 }
 
 // ========== INITIALIZE ==========
-// Make sure page 1 is active
 for (let i = 1; i <= totalPages; i++) {
   const page = document.getElementById(`page${i}`);
   if (i === 1) {
@@ -203,5 +249,15 @@ for (let i = 1; i <= totalPages; i++) {
   }
 }
 
-// Start countdown immediately
+// Start countdown
 startCountdown();
+
+// Para sa audio - kailangan ng user interaction sa desktop
+document.body.addEventListener('click', function enableAudio() {
+  if (birthdaySong && birthdaySong.paused && cakeClicked === false) {
+    // Pre-load audio para ready kapag clinick ang cake
+    birthdaySong.load();
+  }
+}, { once: true });
+
+console.log("Ready! Click the cupcake 🧁 to start the party!");
