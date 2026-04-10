@@ -127,6 +127,27 @@ document.addEventListener("touchend", e => {
 
 window.onload = startCountdown;
 
+window.addEventListener("DOMContentLoaded", () => {
+    const gallery = document.getElementById("gallery");
+    const nextGalleryBtn = document.getElementById("nextGalleryBtn");
+
+    if (!gallery || !nextGalleryBtn) return;
+
+    function checkGalleryScroll() {
+        const maxScroll = gallery.scrollWidth - gallery.clientWidth;
+
+        if (maxScroll <= 0) {
+            nextGalleryBtn.disabled = false;
+            return;
+        }
+
+        nextGalleryBtn.disabled = gallery.scrollLeft < maxScroll - 1;
+    }
+
+    gallery.addEventListener("scroll", checkGalleryScroll);
+    checkGalleryScroll();
+});
+
 // Check if user is authenticated
   if (sessionStorage.getItem("authenticated") !== "true") {
     window.location.href = "/passcode"; // not authenticated → redirect
