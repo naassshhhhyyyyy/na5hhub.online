@@ -1,65 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Happy Birthday 🎂</title>
-<link rel="icon" type="image/png" href="../images/birthday-cake-modified.png">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/birthday.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Happy Birthday 🎂</title>
+  <link rel="icon" type="image/png" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎂%3C/text%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<button class="btn toggle" onclick="toggleTheme()">🌙</button>
+<button class="btn toggle" id="themeToggle">🌙</button>
 
 <!-- Page 1: Countdown -->
-<div class="page countdown active" id="page1">
-    <h1 id="count">3</h1>
+<div class="page countdown-page active" id="page1">
+  <h1 id="count">3</h1>
 </div>
 
 <!-- Page 2: Cake -->
 <div class="page" id="page2">
-    <div class="card">
-        <h1 class="title">Happy Birthday<br>Eden Ira 🎉</h1>
-        <div id="cake" class="cake" onclick="changeCake()">🧁</div>
-        <button class="btn" id="nextCakeBtn" onclick="nextPage()" disabled>Next</button>
-    </div>
+  <div class="card">
+    <h1 class="title">Happy Birthday<br>Eden Ira 🎉</h1>
+    <div id="cake" class="cake">🧁</div>
+    <button class="btn" id="nextCakeBtn" disabled>Next</button>
+  </div>
 </div>
 
 <!-- Page 3: Short Message typing -->
 <div class="page" id="page3">
-    <div class="card">
-        <h2 id="message3" class="typing"></h2>
-        <button class="btn" id="nextMsg3Btn" onclick="nextPage()" disabled>Next</button>
-    </div>
+  <div class="card">
+    <h2 id="message3" class="typing"></h2>
+    <button class="btn" id="nextMsg3Btn" disabled>Next</button>
+  </div>
 </div>
 
 <!-- Page 4: Gallery -->
 <div class="page" id="page4">
-    <div class="card">
-        <h2>Memories 📸</h2>
-        <div class="gallery" id="gallery">
-            <img src="../images/Messenger_creation_2676B275-9C9B-4115-A849-0CD3FB883AC9.jpeg">
-            <img src="../images/IMG_20260309_143331_185.jpg">
-            <img src="../images/IMG_20260314_141701_776.jpg">
-            <img src="../images/IMG_20260314_145234_945.jpg">
-            <img src="../images/IMG_20260314_140044_678.jpg">
-            <img src="../images/IMG_20260303_121106_573.jpg>l">
-        </div>
-        <button class="btn" id="nextGalleryBtn" onclick="nextPage()" disabled>Next</button>
+  <div class="card">
+    <h2>Memories 📸</h2>
+    <div class="gallery" id="gallery">
+      <!-- Using placeholder images since original paths may not exist -->
+      <img src="https://picsum.photos/id/20/150/150" alt="Memory 1">
+      <img src="https://picsum.photos/id/30/150/150" alt="Memory 2">
+      <img src="https://picsum.photos/id/40/150/150" alt="Memory 3">
+      <img src="https://picsum.photos/id/50/150/150" alt="Memory 4">
+      <img src="https://picsum.photos/id/60/150/150" alt="Memory 5">
+      <img src="https://picsum.photos/id/70/150/150" alt="Memory 6">
     </div>
+    <button class="btn" id="nextGalleryBtn" disabled>Next</button>
+  </div>
 </div>
 
 <!-- Page 5: Long Typing Message -->
 <div class="page" id="page5">
-    <div class="card">
-        <h2 id="typing" class="typing"></h2>
-        <button class="btn" id="nextTypingBtn" onclick="nextPage()" disabled>Next</button>
-    </div>
+  <div class="card">
+    <div id="typing" class="typing-long"></div>
+    <button class="btn" id="nextTypingBtn" disabled>Next</button>
+  </div>
 </div>
 
 <!-- Page 6: Gift + Spotify typing -->
 <div class="page" id="page6">
+  <div class="card">
+    <h2 id="giftTitle">Tap the Gift 🎁</h2>
+    <div id="giftBox" class="gift-box">🎁</div>
+    <p id="giftText" class="typing-gift"></p>
+    <div class="spotify-container" id="spotifyContainer">
+      <iframe src="https://open.spotify.com/embed/track/1udOOSbJnytCdgvbgYOF5s?utm_source=generator" allow="encrypted-media" loading="lazy"></iframe>
+    </div>
+  </div>
+</div>
+
+<audio id="birthdaySong" preload="auto">
+  <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+</audio>
+
+<script src="script.js"></script>
+</body>
+</html><div class="page" id="page6">
     <div class="card">
         <h2 id="giftTitle">Tap the Gift 🎁</h2>
         <div id="giftBox" class="cake" onclick="openGift()">🎁</div>
