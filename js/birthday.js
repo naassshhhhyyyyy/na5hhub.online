@@ -1,6 +1,6 @@
 // ========== STATE ==========
 let currentPage = 1;
-const totalPages = 6;
+const totalPages = 5;
 let typingFlags = { 3: false, 5: false, 6: false };
 let cakeClicked = false;
 
@@ -10,9 +10,7 @@ const countEl = document.getElementById('count');
 const cakeDiv = document.getElementById('cake');
 const nextCakeBtn = document.getElementById('nextCakeBtn');
 const nextMsg3Btn = document.getElementById('nextMsg3Btn');
-const nextGalleryBtn = document.getElementById('nextGalleryBtn');
 const nextTypingBtn = document.getElementById('nextTypingBtn');
-const gallery = document.getElementById('gallery');
 const giftBox = document.getElementById('giftBox');
 const giftTitle = document.getElementById('giftTitle');
 const giftTextPara = document.getElementById('giftText');
@@ -44,13 +42,10 @@ function goToPage(pageNum) {
       "Happy 19th Birthday 💖 Wishing you a day filled with laughter, love, and unforgettable memories. May this year bring you endless joy, exciting adventures, and dreams coming true ✨",
       'nextMsg3Btn', 3);
   }
-  else if (currentPage === 5 && !typingFlags[5]) {
+  else if (currentPage === 4 && !typingFlags[5]) {
     startTyping('typing',
       "Eden Ira, you are one of the most amazing people I've ever known.\n\nYour smile lights up every room, your kindness touches every heart, and your energy makes life feel magical. At 19, I know incredible adventures, love, laughter, and growth are all waiting for you. Keep shining, keep dreaming, and never forget how much you are loved and cherished. You make the world a brighter place just by being in it, and I feel so lucky to celebrate this special day with you.\n\nHappy Birthday! 💖✨🎉",
       'nextTypingBtn', 5);
-  }
-  else if (currentPage === 4) {
-    setTimeout(checkGalleryScroll, 100);
   }
 }
 
@@ -97,7 +92,7 @@ function startTyping(elementId, message, btnId, flagKey) {
       }
       typingFlags[flagKey] = true;
       
-      if (flagKey === 6 && spotifyContainer) {
+      if (flagKey === 5 && spotifyContainer) {
         spotifyContainer.classList.add('show');
       }
     }
@@ -127,21 +122,6 @@ function handleCakeClick(e) {
       cakeClicked = true;
     }
   }
-}
-
-// ========== GALLERY SCROLL ==========
-function checkGalleryScroll() {
-  if (!gallery || !nextGalleryBtn) return;
-  
-  const maxScroll = gallery.scrollWidth - gallery.clientWidth;
-  
-  if (maxScroll <= 5) {
-    nextGalleryBtn.disabled = false;
-    return;
-  }
-  
-  const atEnd = gallery.scrollLeft + gallery.clientWidth >= gallery.scrollWidth - 10;
-  nextGalleryBtn.disabled = !atEnd;
 }
 
 // ========== GIFT OPEN - FIXED for desktop ==========
@@ -199,8 +179,7 @@ document.addEventListener('keydown', (e) => {
     
     if (currentPage === 2 && nextCakeBtn.disabled) canProceed = false;
     if (currentPage === 3 && nextMsg3Btn.disabled) canProceed = false;
-    if (currentPage === 4 && nextGalleryBtn.disabled) canProceed = false;
-    if (currentPage === 5 && nextTypingBtn.disabled) canProceed = false;
+    if (currentPage === 4 && nextTypingBtn.disabled) canProceed = false;
     
     if (canProceed) {
       nextPage();
@@ -218,7 +197,6 @@ if (cakeDiv) {
 // Next buttons
 if (nextCakeBtn) nextCakeBtn.addEventListener('click', nextPage);
 if (nextMsg3Btn) nextMsg3Btn.addEventListener('click', nextPage);
-if (nextGalleryBtn) nextGalleryBtn.addEventListener('click', nextPage);
 if (nextTypingBtn) nextTypingBtn.addEventListener('click', nextPage);
 
 // Gift box
@@ -229,13 +207,6 @@ if (giftBox) {
 
 // Theme toggle
 if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
-
-// Gallery scroll
-if (gallery) {
-  gallery.addEventListener('scroll', checkGalleryScroll);
-  gallery.addEventListener('touchmove', checkGalleryScroll);
-  window.addEventListener('resize', () => setTimeout(checkGalleryScroll, 100));
-}
 
 // ========== INITIALIZE ==========
 for (let i = 1; i <= totalPages; i++) {
