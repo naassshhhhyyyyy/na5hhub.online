@@ -31,6 +31,8 @@ function goToPage(pageNum) {
   
   // Show new page
   const newPage = document.getElementById(`page${pageNum}`);
+  if (!newPage) return;
+  
   newPage.classList.remove('prev');
   newPage.classList.add('active');
   
