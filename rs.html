@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Timer</title>
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:system-ui,-apple-system,sans-serif;
+    }
+
+    body{
+      min-height:100vh;
+      min-height:100svh;
+      overflow:hidden;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      color:white;
+      padding:20px;
+      background:linear-gradient(135deg,#2563eb,#ec4899,#60a5fa,#f472b6);
+      background-size:300% 300%;
+      animation:gradientMove 12s ease infinite;
+    }
+
+    @keyframes gradientMove{
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+
+    .bg-layer{
+      position:fixed;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .heart, .ribbon{
+      position:absolute;
+      bottom:-20px;
+      font-size:18px;
+      opacity:0.9;
+      animation:floatUp linear forwards;
+    }
+
+    @keyframes floatUp{
+      0%{transform:translateY(0) scale(0.8);opacity:0}
+      10%{opacity:1}
+      100%{transform:translateY(-110vh) scale(1.4);opacity:0}
+    }
+
+    .card{
+      width:min(92vw,520px);
+      padding:clamp(22px,5vw,32px);
+      border-radius:28px;
+      background:rgba(255,255,255,0.12);
+      border:1px solid rgba(255,255,255,0.2);
+      backdrop-filter:blur(22px);
+      -webkit-backdrop-filter:blur(22px);
+      box-shadow:0 20px 50px rgba(0,0,0,0.25);
+      text-align:center;
+      z-index:2;
+      position:relative;
+    }
+
+    .text{
+      font-size:clamp(1.1rem,4vw,1.5rem);
+      font-weight:600;
+      margin-bottom:18px;
+    }
+
+    .timer{
+      font-size:clamp(1.4rem,5vw,2rem);
+      font-weight:700;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .unit{display:flex;gap:6px;white-space:nowrap}
+    .num{min-width:28px;text-align:center;display:inline-block}
+
+    .rise{animation:rise 0.4s ease}
+
+    @keyframes rise{
+      0%{transform:translateY(14px);opacity:0;filter:blur(4px)}
+      100%{transform:translateY(0);opacity:1;filter:blur(0)}
+    }
+
+    button{
+      padding:12px 18px;
+      border-radius:14px;
+      border:none;
+      cursor:pointer;
+      font-weight:600;
+      color:white;
+      background:rgba(255,255,255,0.2);
+      backdrop-filter:blur(10px);
+    }
+
+    button:hover{transform:scale(1.05)}
+  </style>
+</head>
+<body>
+
+<div class="bg-layer" id="bg"></div>
+
+<div class="card" id="card">
+  <div class="text">Since April 24, 2026</div>
+  <div class="timer" id="timer"></div>
+  <button id="toggleBtn">Switch Mode</button>
+</div>
+
+<script>
+const startDate=new Date("2026-04-24T00:00:00");
+const timerEl=document.getElementById("timer");
+const btn=document.getElementById("toggleBtn");
+const bg=document.getElementById("bg");
+
+let mode="months";
+let prev={};
+
+function requestFS(){
+  const el=document.documentElement;
+  if(el.requestFullscreen){el.requestFullscreen().catch(()=>{})}
+}
+requestFS();
+
+function spawnHearts(){
+  const el=document.createElement("div");
+  el.className="heart";
+  el.innerText="💖";
+  el.style.left=Math.random()*100+"vw";
+  el.style.fontSize=(14+Math.random()*20)+"px";
+  el.style.animationDuration=(4+Math.random()*4)+"s";
+  bg.appendChild(el);
+  setTimeout(()=>el.remove(),8000);
+}
+
+function spawnRibbon(){
+  const el=document.createElement("div");
+  el.className="ribbon";
+  el.innerText="🎀";
+  el.style.left=Math.random()*100+"vw";
+  el.style.fontSize=(16+Math.random()*22)+"px";
+  el.style.animationDuration=(3+Math.random()*3)+"s";
+  bg.appendChild(el);
+  setTimeout(()=>el.remove(),7000);
+}
+
+setInterval(()=>{
+  spawnHearts();
+  spawnRibbon();
+},300);
+
+function getMonthsAndDays(now){
+  let months=(now.getFullYear()-startDate.getFullYear())*12+(now.getMonth()-startDate.getMonth());
+  let temp=new Date(startDate);
+  temp.setMonth(startDate.getMonth()+months);
+  if(temp>now){months--;temp=new Date(startDate);temp.setMonth(startDate.getMonth()+months)}
+  let days=Math.floor((now-temp)/86400000);
+  return{months,days};
+}
+
+function updateNumber(el,key,val){
+  const span=el.querySelector(".num"+key);
+  if(!span)return;
+  if(prev[key]!==val){
+    span.textContent=val;
+    span.classList.remove("rise");
+    void span.offsetWidth;
+    span.classList.add("rise");
+    prev[key]=val;
+  }
+}
+
+function render(){
+  if(mode==="months"){
+    timerEl.innerHTML=`
+      <div class="unit"><span class="num months">0</span> Months</div>
+      <div class="unit"><span class="num days">0</span> Days</div>
+    `;
+  }else{
+    timerEl.innerHTML=`
+      <div class="unit"><span class="num days">0</span> Days</div>
+      <div class="unit"><span class="num minutes">0</span> Minutes</div>
+      <div class="unit"><span class="num seconds">0</span> Seconds</div>
+    `;
+  }
+  prev={};
+}
+
+function update(){
+  const now=new Date();
+
+  if(mode==="months"){
+    const{months,days}=getMonthsAndDays(now);
+    updateNumber(timerEl,".months",months);
+    updateNumber(timerEl,".days",days);
+    btn.textContent="Switch to Seconds Mode";
+  }else{
+    let diff=Math.floor((now-startDate)/1000);
+    const days=Math.floor(diff/86400);
+    diff%=86400;
+    const minutes=Math.floor(diff/60);
+    const seconds=diff%60;
+    updateNumber(timerEl,".days",days);
+    updateNumber(timerEl,".minutes",minutes);
+    updateNumber(timerEl,".seconds",seconds);
+    btn.textContent="Switch to Months Mode";
+  }
+}
+
+btn.addEventListener("click",()=>{
+  mode=mode==="months"?"seconds":"months";
+  render();
+  update();
+});
+
+render();
+update();
+setInterval(update,1000);
+</script>
+
+</body>
+</html>
