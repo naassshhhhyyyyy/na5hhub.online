@@ -1,308 +1,83 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Timer</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>No Relationship</title>
 
-  <style>
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
-      font-family:system-ui,-apple-system,sans-serif;
-    }
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:system-ui,-apple-system,sans-serif;
+}
 
-    body{
-      min-height:100vh;
-      min-height:100svh;
-      overflow:hidden;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      color:white;
-      padding:20px;
-      background:linear-gradient(135deg,#2563eb,#ec4899,#60a5fa,#f472b6);
-      background-size:300% 300%;
-      animation:gradientMove 12s ease infinite;
-    }
+body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
 
-    @keyframes gradientMove{
-      0%{background-position:0% 50%}
-      50%{background-position:100% 50%}
-      100%{background-position:0% 50%}
-    }
+    background:linear-gradient(
+        135deg,
+        #FFE4EC,
+        #FFD6E7,
+        #FFC9DF,
+        #FFEAF2
+    );
+    background-size:300% 300%;
+    animation:gradient 12s ease infinite;
+}
 
-    .bg-layer{
-      position:fixed;
-      inset:0;
-      overflow:hidden;
-      pointer-events:none;
-      z-index:0;
-    }
+@keyframes gradient{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
 
-    .heart,.ribbon{
-      position:absolute;
-      bottom:-20px;
-      opacity:.9;
-      animation:floatUp linear forwards;
-    }
+.card{
+    width:min(90vw,500px);
+    padding:40px 30px;
+    border-radius:28px;
 
-    @keyframes floatUp{
-      0%{
-        transform:translateY(0) scale(.8);
-        opacity:0;
-      }
-      10%{
-        opacity:1;
-      }
-      100%{
-        transform:translateY(-110vh) scale(1.4);
-        opacity:0;
-      }
-    }
+    text-align:center;
 
-    .card{
-      width:min(92vw,560px);
-      padding:clamp(22px,5vw,32px);
-      border-radius:28px;
-      background:rgba(255,255,255,.12);
-      border:1px solid rgba(255,255,255,.2);
-      backdrop-filter:blur(22px);
-      -webkit-backdrop-filter:blur(22px);
-      box-shadow:0 20px 50px rgba(0,0,0,.25);
-      text-align:center;
-      z-index:2;
-      position:relative;
-    }
+    background:rgba(255,255,255,.35);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
 
-    .text{
-      font-size:clamp(1.1rem,4vw,1.5rem);
-      font-weight:600;
-      margin-bottom:18px;
-    }
+    border:1px solid rgba(255,255,255,.45);
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
+}
 
-    .timer{
-      font-size:clamp(1.25rem,4.5vw,2rem);
-      font-weight:700;
-      display:flex;
-      justify-content:center;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-bottom:20px;
-    }
+.title{
+    font-size:clamp(1.7rem,5vw,2.5rem);
+    font-weight:700;
+    color:#D63384;
+    margin-bottom:16px;
+}
 
-    .unit{
-      display:flex;
-      gap:6px;
-      white-space:nowrap;
-    }
-
-    .num{
-      min-width:30px;
-      text-align:center;
-      display:inline-block;
-    }
-
-    .rise{
-      animation:rise .4s ease;
-    }
-
-    @keyframes rise{
-      0%{
-        transform:translateY(14px);
-        opacity:0;
-        filter:blur(4px);
-      }
-      100%{
-        transform:translateY(0);
-        opacity:1;
-        filter:blur(0);
-      }
-    }
-
-    button{
-      padding:12px 18px;
-      border-radius:14px;
-      border:none;
-      cursor:pointer;
-      font-weight:600;
-      color:white;
-      background:rgba(255,255,255,.2);
-      backdrop-filter:blur(10px);
-      transition:.25s;
-    }
-
-    button:hover{
-      transform:scale(1.05);
-    }
-  </style>
+.subtitle{
+    font-size:1rem;
+    color:#7A4962;
+    line-height:1.7;
+}
+</style>
 </head>
+
 <body>
 
-<div class="bg-layer" id="bg"></div>
-
 <div class="card">
-  <div class="text">Since April 24, 2026 • 3:00 PM (GMT+8)</div>
-  <div class="timer" id="timer"></div>
-  <button id="toggleBtn">Switch Mode</button>
+    <div class="title">
+        This person doesn't have any relationship.
+    </div>
+
+    <div class="subtitle">
+        Currently not in a relationship.
+    </div>
 </div>
-
-<script>
-const startDate = new Date("2026-04-24T15:00:00+08:00");
-
-const timerEl = document.getElementById("timer");
-const btn = document.getElementById("toggleBtn");
-const bg = document.getElementById("bg");
-
-let mode = "calendar";
-let prev = {};
-
-function spawnHearts(){
-  const el = document.createElement("div");
-  el.className = "heart";
-  el.innerText = "💖";
-  el.style.left = Math.random()*100 + "vw";
-  el.style.fontSize = (14 + Math.random()*20) + "px";
-  el.style.animationDuration = (4 + Math.random()*4) + "s";
-  bg.appendChild(el);
-  setTimeout(()=>el.remove(),8000);
-}
-
-function spawnRibbon(){
-  const el = document.createElement("div");
-  el.className = "ribbon";
-  el.innerText = "🎀";
-  el.style.left = Math.random()*100 + "vw";
-  el.style.fontSize = (16 + Math.random()*22) + "px";
-  el.style.animationDuration = (3 + Math.random()*3) + "s";
-  bg.appendChild(el);
-  setTimeout(()=>el.remove(),7000);
-}
-
-setInterval(()=>{
-  spawnHearts();
-  spawnRibbon();
-},300);
-
-function getYearsMonthsDays(now) {
-  let years = 0;
-  let months = 0;
-
-  const temp = new Date(startDate);
-
-  // Count full years
-  while (true) {
-    const next = new Date(temp);
-    next.setFullYear(next.getFullYear() + 1);
-
-    if (next <= now) {
-      temp.setFullYear(temp.getFullYear() + 1);
-      years++;
-    } else {
-      break;
-    }
-  }
-
-  // Count full months
-  while (true) {
-    const next = new Date(temp);
-    next.setMonth(next.getMonth() + 1);
-
-    if (next <= now) {
-      temp.setMonth(temp.getMonth() + 1);
-      months++;
-    } else {
-      break;
-    }
-  }
-
-  // Remaining full days
-  const days = Math.floor(
-    (now.getTime() - temp.getTime()) / 86400000
-  );
-
-  return { years, months, days };
-}
-
-function updateNumber(parent, selector, value){
-  const span = parent.querySelector(selector);
-
-  if(!span) return;
-
-  if(prev[selector] !== value){
-    span.textContent = value;
-
-    span.classList.remove("rise");
-    void span.offsetWidth;
-    span.classList.add("rise");
-
-    prev[selector] = value;
-  }
-}
-
-function render(){
-  if(mode === "calendar"){
-    timerEl.innerHTML = `
-      <div class="unit"><span class="num years">0</span> Years</div>
-      <div class="unit"><span class="num months">0</span> Months</div>
-      <div class="unit"><span class="num days">0</span> Days</div>
-    `;
-  }else{
-    timerEl.innerHTML = `
-      <div class="unit"><span class="num days">0</span> Days</div>
-      <div class="unit"><span class="num hours">0</span> Hr</div>
-      <div class="unit"><span class="num minutes">0</span> Min</div>
-      <div class="unit"><span class="num seconds">0</span> Sec</div>
-    `;
-  }
-
-  prev = {};
-}
-
-function update(){
-  const now = new Date();
-
-  if(mode === "calendar"){
-    const { years, months, days } = getYearsMonthsDays(now);
-
-    updateNumber(timerEl, ".years", years);
-    updateNumber(timerEl, ".months", months);
-    updateNumber(timerEl, ".days", days);
-
-    btn.textContent = "Switch to Days / Hours";
-  }else{
-    let diff = Math.floor((now - startDate) / 1000);
-
-    const days = Math.floor(diff / 86400);
-    diff %= 86400;
-
-    const hours = Math.floor(diff / 3600);
-    diff %= 3600;
-
-    const minutes = Math.floor(diff / 60);
-    const seconds = diff % 60;
-
-    updateNumber(timerEl, ".days", days);
-    updateNumber(timerEl, ".hours", hours);
-    updateNumber(timerEl, ".minutes", minutes);
-    updateNumber(timerEl, ".seconds", seconds);
-
-    btn.textContent = "Switch to Years / Months";
-  }
-}
-
-btn.addEventListener("click", () => {
-  mode = mode === "calendar" ? "elapsed" : "calendar";
-  render();
-  update();
-});
-
-render();
-update();
-setInterval(update, 1000);
-</script>
 
 </body>
 </html>
