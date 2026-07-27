@@ -313,6 +313,16 @@ body::before {
   box-shadow: 0 16px 30px rgba(29, 185, 84, 0.18);
 }
 
+.action-button.disabled,
+.spotify-button.disabled {
+  color: #ffe5e5;
+  background: #9d2020 !important;
+  border-color: rgba(255, 107, 107, 0.24) !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .outline-button {
   background: rgba(255, 255, 255, 0.05);
   color: #f7f8fb;
