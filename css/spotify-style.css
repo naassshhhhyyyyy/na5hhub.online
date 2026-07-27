@@ -1,3 +1,4 @@
+/* Premium Spotify-inspired dashboard styling */
 :root {
   color-scheme: dark;
   font-family: 'Inter', sans-serif;
@@ -544,4 +545,23 @@ body::before {
   .action-button {
     width: 100%;
   }
+}
+
+.device {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  min-width: 190px;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+.device-icon {
+  font-size: 1.1rem;
 }
