@@ -227,6 +227,7 @@ function renderIdleState() {
   updateProgress(0, 0);
   queueSection.classList.add('hidden');
   currentTrackId = null;
+  renderDevice(null);
   stopProgress();
 }
 
@@ -243,6 +244,7 @@ function renderErrorState(message) {
   setStateMessage('Retrying automatically every 5 seconds.');
   updateProgress(0, 0);
   renderQueue([]);
+  renderDevice(null);
   stopProgress();
 }
 
@@ -294,6 +296,7 @@ async function refreshAll() {
       throw new Error(`Server responded ${response.status}`);
     }
     const data = await response.json();
+    renderDevice(data.device || null);
     if (!data.playing) {
       renderIdleState();
     } else {
@@ -325,6 +328,67 @@ copyLinkButton.addEventListener('click', async () => {
     setStateMessage('Unable to copy link. Try again.');
   }
 });
+
+function getDeviceIcon(type) {
+  switch (type) {
+    case 'Computer':
+      return '💻';
+    case 'Smartphone':
+      return '📱';
+    case 'Speaker':
+      return '🔊';
+    case 'TV':
+      return '📺';
+    case 'Game Console':
+      return '🎮';
+    case 'Cast Video':
+      return '📺';
+    case 'Cast Audio':
+      return '🔈';
+    case 'AVR':
+      return '📻';
+    default:
+      return '🎧';
+  }
+}
+
+function getDeviceLabel(device) {
+  if (!device) return 'Unknown device';
+  const name = device.name?.trim();
+  const type = device.type?.trim();
+  const hasName = name && !/^unknown/i.test(name);
+  const hasType = type && !/^unknown/i.test(type);
+  const typeLabel = hasType ? type.charAt(0).toUpperCase() + type.slice(1) : '';
+
+  if (hasType && hasName) {
+    if (name.toLowerCase().includes(type.toLowerCase())) {
+      return name;
+    }
+    return `${typeLabel} — ${name}`;
+  }
+  if (hasType) {
+    return typeLabel;
+  }
+  if (hasName) {
+    return name;
+  }
+  return 'Unknown device';
+}
+
+function renderDevice(device) {
+  const deviceElement = document.getElementById('device');
+  if (!device || (!device.name && !device.type)) {
+    deviceElement.innerHTML = '🎧 Unknown device';
+    return;
+  }
+
+  const icon = getDeviceIcon(device.type || '');
+  const label = getDeviceLabel(device);
+  deviceElement.innerHTML = `
+    <span class="device-icon">${icon}</span>
+    <span>Playing on <strong>${label}</strong></span>
+  `;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   refreshAll();
