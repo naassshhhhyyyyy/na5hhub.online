@@ -222,7 +222,13 @@ function renderIdleState() {
   coverImage.alt = 'Spotify offline';
   spotifyLink.href = '#';
   spotifyLink.setAttribute('aria-label', 'Spotify unavailable');
+  spotifyLink.setAttribute('aria-disabled', 'true');
+  spotifyLink.classList.add('disabled');
+  spotifyLink.innerHTML = '<span class="button-icon" aria-hidden="true">⚠</span>Cannot open — no track playing';
   copyLinkButton.disabled = true;
+  copyLinkButton.setAttribute('aria-disabled', 'true');
+  copyLinkButton.classList.add('disabled');
+  copyLinkButton.innerHTML = '<span class="button-icon" aria-hidden="true">🔗</span>Copy unavailable';
   setStateMessage('Spotify is not playing. Queue is unavailable until playback resumes.');
   updateProgress(0, 0);
   queueSection.classList.add('hidden');
@@ -267,7 +273,16 @@ function renderPlayingState(data) {
   albumElement.textContent = data.album || 'Unknown album';
   spotifyLink.href = data.spotifyUrl || 'https://open.spotify.com';
   spotifyLink.setAttribute('aria-label', `Open ${data.song} in Spotify`);
-  copyLinkButton.disabled = !data.spotifyUrl;
+  spotifyLink.removeAttribute('aria-disabled');
+  spotifyLink.classList.remove('disabled');
+  spotifyLink.innerHTML = '<span class="button-icon" aria-hidden="true">♬</span>Open in Spotify';
+  const canCopy = Boolean(data.spotifyUrl);
+  copyLinkButton.disabled = !canCopy;
+  copyLinkButton.removeAttribute('aria-disabled');
+  copyLinkButton.classList.toggle('disabled', !canCopy);
+  copyLinkButton.innerHTML = canCopy
+    ? '<span class="button-icon" aria-hidden="true">🔗</span>Copy Link'
+    : '<span class="button-icon" aria-hidden="true">🔗</span>Copy unavailable';
   trackState = {
     playing: Boolean(data.playing),
     progressMs: data.progress_ms || 0,
