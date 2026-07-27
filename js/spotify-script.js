@@ -219,7 +219,7 @@ function renderIdleState() {
   artistElement.textContent = 'Spotify is offline or paused';
   albumElement.textContent = 'No playback record available.';
   coverImage.src = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
-  coverImage.alt = 'Spotify offline';
+  coverImage.alt = 'Spotify Album';
   spotifyLink.href = '#';
   spotifyLink.setAttribute('aria-label', 'Spotify unavailable');
   spotifyLink.setAttribute('aria-disabled', 'true');
