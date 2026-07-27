@@ -16,6 +16,17 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+img,
+svg,
+video {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 body {
@@ -160,6 +171,11 @@ body::before {
   align-items: center;
 }
 
+.details-column {
+  display: grid;
+  gap: 20px;
+}
+
 .cover-column {
   display: flex;
   justify-content: center;
@@ -291,6 +307,43 @@ body::before {
   gap: 14px;
 }
 
+.control-card {
+  margin-top: 8px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  gap: 12px;
+}
+
+.control-card-header {
+  display: grid;
+  gap: 4px;
+}
+
+.control-card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.control-card-header p {
+  margin: 0;
+  color: #8a96a3;
+  font-size: 0.9rem;
+}
+
+.control-buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.control-buttons-row .action-button {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
 .action-button {
   appearance: none;
   border: none;
@@ -304,7 +357,15 @@ body::before {
   justify-content: center;
   gap: 10px;
   cursor: pointer;
+  text-decoration: none;
   transition: transform 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.action-button:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(29, 185, 84, 0.7);
+  outline-offset: 2px;
 }
 
 .spotify-button {
@@ -339,6 +400,10 @@ body::before {
 
 .queue-shell {
   margin-top: 34px;
+}
+
+.recent-shell {
+  margin-top: 18px;
 }
 
 .hidden {
@@ -516,15 +581,15 @@ body::before {
   .queue-duration {
     display: none;
   }
+
+  .control-buttons-row {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 760px) {
   .widget-shell {
     padding: 22px;
-  }
-
-  .player-card {
-    grid-template-columns: 1fr;
   }
 
   .cover-frame {
@@ -542,7 +607,7 @@ body::before {
     padding: 18px;
   }
 
-  .widget-header {
+  .widget-top {
     flex-direction: column;
     align-items: flex-start;
   }
