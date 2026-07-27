@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nash | Spotify Currently Listening</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/spotify-style.css" />
+</head>
+<body>
+  <div class="page-shell" role="main">
+    <div class="widget-shell">
+      <header class="widget-top">
+        <div class="top-left">
+          <span class="brand-text">Spotify • Currently Listening</span>
+          <div class="equalizer" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        <div id="statusBadge" class="status-badge loading" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="statusText">Connecting...</span>
+        </div>
+      </header>
+
+      <section class="player-section" aria-label="Currently listening widget">
+        <div class="cover-column">
+          <div class="cover-frame">
+            <div id="coverGlow" class="cover-glow"></div>
+            <img id="cover" class="cover-image" src="" alt="Album artwork" loading="lazy" />
+          </div>
+        </div>
+
+        <div class="details-column">
+          <div class="track-meta">
+            <div class="track-title-wrap">
+              <div id="titleContainer" class="marquee-wrap">
+                <span id="title" class="track-title">Loading track…</span>
+              </div>
+            </div>
+            <p id="artist" class="track-artist">Spotify is warming up</p>
+            <p id="album" class="track-album">Album details will appear here</p>
+          </div>
+
+          <div class="progress-block">
+            <div class="progress-labels">
+              <span>Progress</span>
+            </div>
+            <div class="progress-bar-shell" aria-label="Playback progress">
+              <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div class="progress-times">
+              <span id="currentTime">0:00</span>
+              <span id="durationTime">0:00</span>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <a id="spotifyLink" class="action-button spotify-button" href="#" target="_blank" rel="noopener noreferrer">
+              <span class="button-icon" aria-hidden="true">♬</span>
+              Open in Spotify
+            </a>
+            <button id="copyLink" class="action-button outline-button" type="button">
+              Copy Link
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="queue-shell" aria-label="Up next queue">
+        <div class="queue-header">
+          <div>
+            <p class="queue-label">Queue</p>
+            <h2>Up Next</h2>
+          </div>
+          <span class="queue-note">Next 5 songs</span>
+        </div>
+        <div id="queueList" class="queue-list"></div>
+      </section>
+
+      <div id="stateMessage" class="state-message" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <script src="js/spotify-script.js"></script>
+</body>
+</html>
