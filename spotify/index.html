@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https: 'unsafe-inline'; style-src 'self' https: 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self';" />
   <title>Nash | Spotify Currently Listening</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -69,6 +71,18 @@
               Copy Link
             </button>
           </div>
+
+          <div class="control-card" aria-label="Playback controls">
+            <div class="control-card-header">
+              <h3>Playback controls</h3>
+              <p>Protected with a password prompt.</p>
+            </div>
+            <div class="control-buttons-row">
+              <button id="previousButton" class="action-button outline-button" type="button">⏮ Previous</button>
+              <button id="playPauseButton" class="action-button spotify-button" type="button">▶ Play / Pause</button>
+              <button id="nextButton" class="action-button outline-button" type="button">Next ⏭</button>
+            </div>
+          </div>
         </div>
       </section>
       <section class="queue-shell" aria-label="Up next queue">
@@ -85,5 +99,43 @@
     </div>
   </div>
   <script src="../js/spotify-script.js"></script>
+  <script>
+    let lockTriggered = false;
+
+    function lockPage() {
+      if (lockTriggered) return;
+      lockTriggered = true;
+      document.body.innerHTML = '<div style="display:grid;place-items:center;min-height:100vh;font-family:Inter,Arial,sans-serif;color:#fff;background:#050607;text-align:center;padding:24px;">Access restricted</div>';
+      document.body.style.overflow = 'hidden';
+    }
+
+    document.addEventListener('contextmenu', (event) => event.preventDefault());
+    document.addEventListener('selectstart', (event) => event.preventDefault());
+    document.addEventListener('dragstart', (event) => event.preventDefault());
+    document.addEventListener('keydown', (event) => {
+      const forbiddenKeys = ['F12', 'I', 'J', 'C'];
+      const isDevtoolsCombo = (event.ctrlKey || event.metaKey) && event.shiftKey && forbiddenKeys.includes(event.key.toUpperCase());
+      const isCtrlU = (event.ctrlKey || event.metaKey) && event.key.toUpperCase() === 'U';
+      const isPrintScreen = event.key === 'PrintScreen';
+      if (isDevtoolsCombo || isCtrlU || isPrintScreen) {
+        event.preventDefault();
+        event.stopPropagation();
+        lockPage();
+      }
+    });
+    document.addEventListener('wheel', (event) => {
+      if (event.ctrlKey) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+
+    setInterval(() => {
+      const widthThreshold = window.outerWidth - window.innerWidth > 160;
+      const heightThreshold = window.outerHeight - window.innerHeight > 160;
+      if (widthThreshold || heightThreshold) {
+        lockPage();
+      }
+    }, 1000);
+  </script>
 </body>
 </html>
