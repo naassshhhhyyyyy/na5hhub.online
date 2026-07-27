@@ -24,7 +24,6 @@ const titleContainer = document.getElementById('titleContainer');
 const previousButton = document.getElementById('previousButton');
 const playPauseButton = document.getElementById('playPauseButton');
 const nextButton = document.getElementById('nextButton');
-
 let trackState = {
   playing: false,
   progressMs: 0,
