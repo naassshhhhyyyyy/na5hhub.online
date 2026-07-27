@@ -1,6 +1,9 @@
-const SPOTIFY_API = 'https://spotify-auth-g08f.onrender.com/api/spotify';
-const QUEUE_API = 'https://spotify-auth-g08f.onrender.com/api/queue';
+const API_BASE = 'https://spotify-auth-g08f.onrender.com';
+const SPOTIFY_API = `${API_BASE}/api/spotify`;
+const QUEUE_API = `${API_BASE}/api/queue`;
 const REFRESH_INTERVAL = 5000;
+const PAUSE_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+const ACTION_PASSWORD_STORAGE_KEY = '2007';
 
 const coverImage = document.getElementById('cover');
 const coverGlow = document.getElementById('coverGlow');
@@ -18,6 +21,9 @@ const stateMessage = document.getElementById('stateMessage');
 const queueList = document.getElementById('queueList');
 const queueSection = document.querySelector('.queue-shell');
 const titleContainer = document.getElementById('titleContainer');
+const previousButton = document.getElementById('previousButton');
+const playPauseButton = document.getElementById('playPauseButton');
+const nextButton = document.getElementById('nextButton');
 
 let trackState = {
   playing: false,
@@ -29,10 +35,18 @@ let trackState = {
 let refreshTimer = null;
 let progressAnimation = null;
 let currentTrackId = null;
+let pausedSince = null;
 
 function formatTime(ms) {
   const minutes = Math.floor(ms / 60000);
   const seconds = Math.floor((ms % 60000) / 1000);
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
@@ -43,6 +57,81 @@ function setStatus(text, variant = 'live') {
 
 function setStateMessage(text) {
   stateMessage.textContent = text;
+}
+
+function updatePlayPauseButtonLabel(isPlaying) {
+  playPauseButton.textContent = isPlaying ? 'Pause' : 'Play';
+}
+
+function promptForPassword(actionName) {
+  const password = window.prompt(`Enter password to ${actionName}:`);
+
+  if (!password) {
+    throw new Error('Password required.');
+  }
+
+  localStorage.setItem(ACTION_PASSWORD_STORAGE_KEY, password);
+  return password;
+}
+
+async function protectedAction(actionName, endpoint, method = 'POST', body = null) {
+  const password = promptForPassword(actionName);
+
+  const options = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-action-password': password,
+    },
+  };
+
+  if (body !== null) {
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(endpoint, options);
+  const responseText = await response.text();
+  let data = null;
+
+  try {
+    data = responseText ? JSON.parse(responseText) : null;
+  } catch {
+    data = responseText;
+  }
+
+  if (!response.ok) {
+    throw new Error(data?.error || data?.message || 'Action failed.');
+  }
+
+  return data;
+}
+
+async function handlePreviousTrack() {
+  try {
+    await protectedAction('go to the previous track', 'https://spotify-auth-g08f.onrender.com/api/previous');
+    setStateMessage('Moved to the previous track.');
+  } catch (error) {
+    setStateMessage(error.message || 'Unable to change track.');
+  }
+}
+
+async function handlePlayPause() {
+  try {
+    await protectedAction('toggle play/pause', 'https://spotify-auth-g08f.onrender.com/api/toggle', 'PUT');
+    await refreshAll();
+    setStateMessage('Playback toggled.');
+  } catch (error) {
+    setStateMessage(error.message || 'Unable to toggle playback.');
+  }
+}
+
+async function handleNextTrack() {
+  try {
+    await protectedAction('go to the next track', 'https://spotify-auth-g08f.onrender.com/api/next');
+    setStateMessage('Moved to the next track.');
+  } catch (error) {
+    setStateMessage(error.message || 'Unable to change track.');
+  }
 }
 
 function updateMarquee() {
@@ -77,6 +166,13 @@ function startProgressLoop() {
     const elapsed = Date.now() - startTime;
     const currentMs = Math.min(baseProgress + elapsed, trackState.durationMs);
     updateProgress(currentMs, trackState.durationMs);
+
+    if (currentMs >= trackState.durationMs && trackState.durationMs > 0) {
+      trackState.playing = false;
+      stopProgress();
+      return;
+    }
+
     if (currentMs < trackState.durationMs) {
       progressAnimation = requestAnimationFrame(animate);
     }
@@ -214,10 +310,10 @@ function renderQueue(items) {
 }
 
 function renderIdleState() {
-  setStatus('🔴 Offline', 'error');
+  setStatus('� Inactivity', 'paused');
   titleElement.textContent = 'No track playing';
-  artistElement.textContent = 'Spotify is offline or paused';
-  albumElement.textContent = 'No playback record available.';
+  artistElement.textContent = 'Playback has been inactive for over 10 minutes';
+  albumElement.textContent = 'No playback activity available.';
   coverImage.src = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
   coverImage.alt = 'Spotify Album';
   spotifyLink.href = '#';
@@ -229,10 +325,12 @@ function renderIdleState() {
   copyLinkButton.setAttribute('aria-disabled', 'true');
   copyLinkButton.classList.add('disabled');
   copyLinkButton.innerHTML = '<span class="button-icon" aria-hidden="true">🔗</span>Copy unavailable';
-  setStateMessage('Spotify is not playing. Queue is unavailable until playback resumes.');
+  setStateMessage('Inactivity — no track playing.');
+  updatePlayPauseButtonLabel(false);
   updateProgress(0, 0);
   queueSection.classList.add('hidden');
   currentTrackId = null;
+  pausedSince = null;
   renderDevice(null);
   stopProgress();
 }
@@ -248,6 +346,7 @@ function renderErrorState(message) {
   spotifyLink.setAttribute('aria-label', 'Spotify unavailable');
   copyLinkButton.disabled = true;
   setStateMessage('Retrying automatically every 5 seconds.');
+  updatePlayPauseButtonLabel(false);
   updateProgress(0, 0);
   renderQueue([]);
   renderDevice(null);
@@ -265,7 +364,7 @@ async function fetchQueue() {
   }
 }
 
-function renderPlayingState(data) {
+function renderPlayingState(data, messageOverride = null) {
   const trackId = `${data.song}-${data.album}`;
   setStatus(data.playing ? '🟢 Listening Now' : '🟡 Paused', data.playing ? 'live' : 'paused');
   titleElement.textContent = data.song || 'Unknown track';
@@ -289,19 +388,25 @@ function renderPlayingState(data) {
     durationMs: data.duration_ms || 0,
     updatedAt: Date.now(),
     spotifyUrl: data.spotifyUrl || '',
+    song: data.song || 'Unknown track',
+    artists: normalizeArtistNames(data.artists),
+    album: data.album || 'Unknown album',
+    albumImage: data.albumImage || '',
   };
   if (trackId !== currentTrackId) {
     currentTrackId = trackId;
+    completedTrackKey = null;
     updateCover(data.albumImage || 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg');
   }
   updateProgress(trackState.progressMs, trackState.durationMs);
   updateMarquee();
+  updatePlayPauseButtonLabel(trackState.playing);
   if (trackState.playing) {
     startProgressLoop();
   } else {
     stopProgress();
   }
-  setStateMessage('Live listening activity is displayed here.');
+  setStateMessage(messageOverride || (data.playing ? 'Live listening activity is displayed here.' : 'Playback is paused. The last track stays visible for 10 minutes.'));
 }
 
 async function refreshAll() {
@@ -312,13 +417,28 @@ async function refreshAll() {
     }
     const data = await response.json();
     renderDevice(data.device || null);
+    const queue = await fetchQueue();
+    renderQueue(queue);
+
     if (!data.playing) {
-      renderIdleState();
+      if (data.song) {
+        if (!pausedSince) {
+          pausedSince = Date.now();
+        }
+        const remainingMs = PAUSE_IDLE_TIMEOUT_MS - (Date.now() - pausedSince);
+        if (remainingMs > 0) {
+          renderPlayingState(data, `Paused — switching to inactivity in ${formatCountdown(remainingMs)}.`);
+          queueSection.classList.remove('hidden');
+        } else {
+          renderIdleState();
+        }
+      } else {
+        renderIdleState();
+      }
     } else {
+      pausedSince = null;
       renderPlayingState(data);
       queueSection.classList.remove('hidden');
-      const queue = await fetchQueue();
-      renderQueue(queue);
     }
   } catch (error) {
     console.error('Spotify fetch error:', error);
@@ -404,6 +524,10 @@ function renderDevice(device) {
     <span>Playing on <strong>${label}</strong></span>
   `;
 }
+
+previousButton.addEventListener('click', handlePreviousTrack);
+playPauseButton.addEventListener('click', handlePlayPause);
+nextButton.addEventListener('click', handleNextTrack);
 
 document.addEventListener('DOMContentLoaded', () => {
   refreshAll();
