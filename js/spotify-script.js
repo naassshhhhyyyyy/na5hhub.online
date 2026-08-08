@@ -1,10 +1,13 @@
 const API_BASE = 'https://spotify-auth-g08f.onrender.com';
-const SPOTIFY_API = `${API_BASE}/api/spotify`;
-const QUEUE_API = `${API_BASE}/api/queue`;
 const REFRESH_INTERVAL = 5000;
 const PAUSE_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 const ACTION_PASSWORD_STORAGE_KEY = '2007';
 
+// Account management
+let currentAccount = 1;
+const MAX_ACCOUNTS = 5;
+
+// DOM Elements
 const coverImage = document.getElementById('cover');
 const coverGlow = document.getElementById('coverGlow');
 const titleElement = document.getElementById('title');
@@ -24,6 +27,10 @@ const titleContainer = document.getElementById('titleContainer');
 const previousButton = document.getElementById('previousButton');
 const playPauseButton = document.getElementById('playPauseButton');
 const nextButton = document.getElementById('nextButton');
+const accountSelect = document.getElementById('accountSelect');
+const refreshAccountBtn = document.getElementById('refreshAccountBtn');
+const accountStatus = document.getElementById('accountStatus');
+
 let trackState = {
   playing: false,
   progressMs: 0,
@@ -35,6 +42,40 @@ let refreshTimer = null;
 let progressAnimation = null;
 let currentTrackId = null;
 let pausedSince = null;
+let completedTrackKey = null;
+
+// ========================================
+// ACCOUNT MANAGEMENT
+// ========================================
+
+function getSpotifyApiUrl(account = null) {
+  const acc = account || currentAccount;
+  return `${API_BASE}/api/spotify?account=${acc}`;
+}
+
+function getQueueApiUrl(account = null) {
+  const acc = account || currentAccount;
+  return `${API_BASE}/api/queue?account=${acc}`;
+}
+
+function getToggleApiUrl(account = null) {
+  const acc = account || currentAccount;
+  return `${API_BASE}/api/toggle?account=${acc}`;
+}
+
+function getPreviousApiUrl(account = null) {
+  const acc = account || currentAccount;
+  return `${API_BASE}/api/previous?account=${acc}`;
+}
+
+function getNextApiUrl(account = null) {
+  const acc = account || currentAccount;
+  return `${API_BASE}/api/next?account=${acc}`;
+}
+
+// ========================================
+// HELPER FUNCTIONS
+// ========================================
 
 function formatTime(ms) {
   const minutes = Math.floor(ms / 60000);
@@ -59,23 +100,24 @@ function setStateMessage(text) {
 }
 
 function updatePlayPauseButtonLabel(isPlaying) {
-  playPauseButton.textContent = isPlaying ? 'Pause' : 'Play';
+  playPauseButton.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
 }
 
 function promptForPassword(actionName) {
   const password = window.prompt(`Enter password to ${actionName}:`);
-
   if (!password) {
     throw new Error('Password required.');
   }
-
   localStorage.setItem(ACTION_PASSWORD_STORAGE_KEY, password);
   return password;
 }
 
+// ========================================
+// PROTECTED ACTIONS (with account support)
+// ========================================
+
 async function protectedAction(actionName, endpoint, method = 'POST', body = null) {
   const password = promptForPassword(actionName);
-
   const options = {
     method,
     headers: {
@@ -83,32 +125,32 @@ async function protectedAction(actionName, endpoint, method = 'POST', body = nul
       'x-action-password': password,
     },
   };
-
   if (body !== null) {
     options.body = JSON.stringify(body);
   }
-
   const response = await fetch(endpoint, options);
   const responseText = await response.text();
   let data = null;
-
   try {
     data = responseText ? JSON.parse(responseText) : null;
   } catch {
     data = responseText;
   }
-
   if (!response.ok) {
     throw new Error(data?.error || data?.message || 'Action failed.');
   }
-
   return data;
 }
 
+// ========================================
+// PLAYBACK CONTROLS
+// ========================================
+
 async function handlePreviousTrack() {
   try {
-    await protectedAction('go to the previous track', 'https://spotify-auth-g08f.onrender.com/api/previous');
-    setStateMessage('Moved to the previous track.');
+    await protectedAction('go to the previous track', getPreviousApiUrl());
+    setStateMessage('⏮ Moved to the previous track.');
+    await refreshAll();
   } catch (error) {
     setStateMessage(error.message || 'Unable to change track.');
   }
@@ -116,9 +158,9 @@ async function handlePreviousTrack() {
 
 async function handlePlayPause() {
   try {
-    await protectedAction('toggle play/pause', 'https://spotify-auth-g08f.onrender.com/api/toggle', 'PUT');
+    await protectedAction('toggle play/pause', getToggleApiUrl(), 'PUT');
     await refreshAll();
-    setStateMessage('Playback toggled.');
+    setStateMessage('⏯ Playback toggled.');
   } catch (error) {
     setStateMessage(error.message || 'Unable to toggle playback.');
   }
@@ -126,12 +168,17 @@ async function handlePlayPause() {
 
 async function handleNextTrack() {
   try {
-    await protectedAction('go to the next track', 'https://spotify-auth-g08f.onrender.com/api/next');
-    setStateMessage('Moved to the next track.');
+    await protectedAction('go to the next track', getNextApiUrl());
+    setStateMessage('⏭ Moved to the next track.');
+    await refreshAll();
   } catch (error) {
     setStateMessage(error.message || 'Unable to change track.');
   }
 }
+
+// ========================================
+// UI UPDATES
+// ========================================
 
 function updateMarquee() {
   if (titleElement.scrollWidth > titleContainer.offsetWidth) {
@@ -188,10 +235,7 @@ function getDominantColor(img) {
   canvas.height = height;
   ctx.drawImage(img, 0, 0, width, height);
   const data = ctx.getImageData(0, 0, width, height).data;
-  let r = 0,
-    g = 0,
-    b = 0,
-    count = 0;
+  let r = 0, g = 0, b = 0, count = 0;
   for (let i = 0; i < data.length; i += 4) {
     const alpha = data[i + 3];
     if (alpha > 64) {
@@ -212,6 +256,9 @@ function setBackgroundColor(color) {
 }
 
 function updateCover(imageUrl) {
+  if (!imageUrl || imageUrl === '') {
+    imageUrl = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
+  }
   const tempImage = new Image();
   tempImage.crossOrigin = 'Anonymous';
   tempImage.src = imageUrl;
@@ -226,7 +273,7 @@ function updateCover(imageUrl) {
     };
   };
   tempImage.onerror = () => {
-    coverImage.src = imageUrl;
+    coverImage.src = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
     coverGlow.style.background = 'radial-gradient(circle at 35% 35%, rgba(29, 185, 84, 0.2), transparent 45%)';
   };
 }
@@ -248,40 +295,16 @@ function normalizeQueueData(items) {
   if (Array.isArray(items)) {
     return items.map((item) => ({
       song: item.song || item.name || item.track?.name,
-      artists:
-        normalizeArtistNames(item.artists) ||
-        normalizeArtistNames(item.track?.artists) ||
-        [],
-      albumImage:
-        item.albumImage ||
-        item.track?.album?.images?.[0]?.url ||
-        item.album?.images?.[0]?.url ||
-        item.image ||
-        item.track?.album?.image ||
-        '',
+      artists: normalizeArtistNames(item.artists) || normalizeArtistNames(item.track?.artists) || [],
+      albumImage: item.albumImage || item.track?.album?.images?.[0]?.url || item.album?.images?.[0]?.url || item.image || item.track?.album?.image || '',
       duration_ms: item.duration_ms || item.track?.duration_ms || 0,
     }));
   }
-  const payload = Array.isArray(items.queue)
-    ? items.queue
-    : Array.isArray(items.tracks)
-    ? items.tracks
-    : Array.isArray(items.items)
-    ? items.items
-    : [];
+  const payload = Array.isArray(items.queue) ? items.queue : Array.isArray(items.tracks) ? items.tracks : Array.isArray(items.items) ? items.items : [];
   return payload.map((item) => ({
     song: item.song || item.name || item.track?.name,
-    artists:
-      normalizeArtistNames(item.artists) ||
-      normalizeArtistNames(item.track?.artists) ||
-      [],
-    albumImage:
-      item.albumImage ||
-      item.track?.album?.images?.[0]?.url ||
-      item.album?.images?.[0]?.url ||
-      item.image ||
-      item.track?.album?.image ||
-      '',
+    artists: normalizeArtistNames(item.artists) || normalizeArtistNames(item.track?.artists) || [],
+    albumImage: item.albumImage || item.track?.album?.images?.[0]?.url || item.album?.images?.[0]?.url || item.image || item.track?.album?.image || '',
     duration_ms: item.duration_ms || item.track?.duration_ms || 0,
   }));
 }
@@ -308,8 +331,12 @@ function renderQueue(items) {
   });
 }
 
+// ========================================
+// RENDER STATES
+// ========================================
+
 function renderIdleState() {
-  setStatus('� Inactivity', 'paused');
+  setStatus('💤 Inactivity', 'paused');
   titleElement.textContent = 'No track playing';
   artistElement.textContent = 'Playback has been inactive for over 10 minutes';
   albumElement.textContent = 'No playback activity available.';
@@ -332,6 +359,7 @@ function renderIdleState() {
   pausedSince = null;
   renderDevice(null);
   stopProgress();
+  accountStatus.textContent = `Account ${currentAccount} • Idle`;
 }
 
 function renderErrorState(message) {
@@ -350,17 +378,7 @@ function renderErrorState(message) {
   renderQueue([]);
   renderDevice(null);
   stopProgress();
-}
-
-async function fetchQueue() {
-  try {
-    const response = await fetch(QUEUE_API, { cache: 'no-store' });
-    if (!response.ok) return [];
-    return await response.json();
-  } catch (error) {
-    console.error('Queue fetch error:', error);
-    return [];
-  }
+  accountStatus.textContent = `Account ${currentAccount} • Error`;
 }
 
 function renderPlayingState(data, messageOverride = null) {
@@ -378,9 +396,7 @@ function renderPlayingState(data, messageOverride = null) {
   copyLinkButton.disabled = !canCopy;
   copyLinkButton.removeAttribute('aria-disabled');
   copyLinkButton.classList.toggle('disabled', !canCopy);
-  copyLinkButton.innerHTML = canCopy
-    ? '<span class="button-icon" aria-hidden="true">🔗</span>Copy Link'
-    : '<span class="button-icon" aria-hidden="true">🔗</span>Copy unavailable';
+  copyLinkButton.innerHTML = canCopy ? '<span class="button-icon" aria-hidden="true">🔗</span>Copy Link' : '<span class="button-icon" aria-hidden="true">🔗</span>Copy unavailable';
   trackState = {
     playing: Boolean(data.playing),
     progressMs: data.progress_ms || 0,
@@ -406,15 +422,99 @@ function renderPlayingState(data, messageOverride = null) {
     stopProgress();
   }
   setStateMessage(messageOverride || (data.playing ? 'Live listening activity is displayed here.' : 'Playback is paused. The last track stays visible for 10 minutes.'));
+  accountStatus.textContent = `Account ${currentAccount} • ${data.playing ? 'Playing' : 'Paused'}`;
 }
 
-async function refreshAll() {
+// ========================================
+// FETCH FUNCTIONS
+// ========================================
+
+async function fetchQueue() {
   try {
-    const response = await fetch(SPOTIFY_API, { cache: 'no-store' });
+    const response = await fetch(getQueueApiUrl(), { cache: 'no-store' });
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    console.error('Queue fetch error:', error);
+    return [];
+  }
+}
+
+async function fetchCurrentlyPlaying() {
+  try {
+    const response = await fetch(getSpotifyApiUrl(), { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`Server responded ${response.status}`);
     }
-    const data = await response.json();
+    return await response.json();
+  } catch (error) {
+    throw error;
+  }
+}
+
+// ========================================
+// DEVICE RENDER
+// ========================================
+
+function getDeviceIcon(type) {
+  switch (type) {
+    case 'Computer': return '💻';
+    case 'Smartphone': return '📱';
+    case 'Speaker': return '🔊';
+    case 'TV': return '📺';
+    case 'Game Console': return '🎮';
+    case 'Cast Video': return '📺';
+    case 'Cast Audio': return '🔈';
+    case 'AVR': return '📻';
+    default: return '🎧';
+  }
+}
+
+function getDeviceLabel(device) {
+  if (!device) return 'Unknown device';
+  const name = device.name?.trim();
+  const type = device.type?.trim();
+  const hasName = name && !/^unknown/i.test(name);
+  const hasType = type && !/^unknown/i.test(type);
+  const typeLabel = hasType ? type.charAt(0).toUpperCase() + type.slice(1) : '';
+  if (hasType && hasName) {
+    if (name.toLowerCase().includes(type.toLowerCase())) {
+      return name;
+    }
+    return `${typeLabel} — ${name}`;
+  }
+  if (hasType) return typeLabel;
+  if (hasName) return name;
+  return 'Unknown device';
+}
+
+function renderDevice(device) {
+  const deviceElement = document.getElementById('device');
+  if (!device || (!device.name && !device.type)) {
+    deviceElement.innerHTML = '🎧 Unknown device';
+    return;
+  }
+  const icon = getDeviceIcon(device.type || '');
+  const label = getDeviceLabel(device);
+  deviceElement.innerHTML = `
+    <span class="device-icon">${icon}</span>
+    <span>Playing on <strong>${label}</strong></span>
+  `;
+}
+
+// ========================================
+// MAIN REFRESH
+// ========================================
+
+async function refreshAll() {
+  try {
+    const data = await fetchCurrentlyPlaying();
+    
+    // Update account status
+    if (data.account) {
+      accountStatus.textContent = `Account ${data.account} • ${data.playing ? 'Playing' : 'Paused'}`;
+    }
+    
     renderDevice(data.device || null);
     const queue = await fetchQueue();
     renderQueue(queue);
@@ -452,83 +552,59 @@ function scheduleRefresh() {
   refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL);
 }
 
+// ========================================
+// ACCOUNT SWITCHING
+// ========================================
+
+function switchAccount(account) {
+  currentAccount = parseInt(account);
+  pausedSince = null;
+  stopProgress();
+  accountStatus.textContent = `Account ${currentAccount} • Loading...`;
+  refreshAll();
+}
+
+// ========================================
+// EVENT LISTENERS
+// ========================================
+
 copyLinkButton.addEventListener('click', async () => {
   const url = trackState.spotifyUrl;
   if (!url) return;
   try {
     await navigator.clipboard.writeText(url);
-    setStateMessage('Track link copied to clipboard.');
+    setStateMessage('✅ Track link copied to clipboard.');
   } catch (error) {
-    setStateMessage('Unable to copy link. Try again.');
+    setStateMessage('❌ Unable to copy link. Try again.');
   }
 });
-
-function getDeviceIcon(type) {
-  switch (type) {
-    case 'Computer':
-      return '💻';
-    case 'Smartphone':
-      return '📱';
-    case 'Speaker':
-      return '🔊';
-    case 'TV':
-      return '📺';
-    case 'Game Console':
-      return '🎮';
-    case 'Cast Video':
-      return '📺';
-    case 'Cast Audio':
-      return '🔈';
-    case 'AVR':
-      return '📻';
-    default:
-      return '🎧';
-  }
-}
-
-function getDeviceLabel(device) {
-  if (!device) return 'Unknown device';
-  const name = device.name?.trim();
-  const type = device.type?.trim();
-  const hasName = name && !/^unknown/i.test(name);
-  const hasType = type && !/^unknown/i.test(type);
-  const typeLabel = hasType ? type.charAt(0).toUpperCase() + type.slice(1) : '';
-
-  if (hasType && hasName) {
-    if (name.toLowerCase().includes(type.toLowerCase())) {
-      return name;
-    }
-    return `${typeLabel} — ${name}`;
-  }
-  if (hasType) {
-    return typeLabel;
-  }
-  if (hasName) {
-    return name;
-  }
-  return 'Unknown device';
-}
-
-function renderDevice(device) {
-  const deviceElement = document.getElementById('device');
-  if (!device || (!device.name && !device.type)) {
-    deviceElement.innerHTML = '🎧 Unknown device';
-    return;
-  }
-
-  const icon = getDeviceIcon(device.type || '');
-  const label = getDeviceLabel(device);
-  deviceElement.innerHTML = `
-    <span class="device-icon">${icon}</span>
-    <span>Playing on <strong>${label}</strong></span>
-  `;
-}
 
 previousButton.addEventListener('click', handlePreviousTrack);
 playPauseButton.addEventListener('click', handlePlayPause);
 nextButton.addEventListener('click', handleNextTrack);
 
+accountSelect.addEventListener('change', (e) => {
+  switchAccount(e.target.value);
+});
+
+refreshAccountBtn.addEventListener('click', () => {
+  switchAccount(accountSelect.value);
+});
+
+// ========================================
+// INIT
+// ========================================
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Check URL params for account
+  const urlParams = new URLSearchParams(window.location.search);
+  const accountParam = urlParams.get('account');
+  if (accountParam) {
+    currentAccount = parseInt(accountParam);
+    accountSelect.value = currentAccount;
+  }
+  
+  accountStatus.textContent = `Account ${currentAccount} • Loading...`;
   refreshAll();
   scheduleRefresh();
 });
