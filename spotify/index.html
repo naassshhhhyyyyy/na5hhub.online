@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../css/spotify-style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="page-shell" role="main">
@@ -31,8 +31,22 @@
         </div>
         <div class="device" id="device">
           🎧 Detecting device...
-      </div>
+        </div>
       </header>
+      
+      <!-- Account Selector -->
+      <div class="account-selector" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;padding:8px 0;">
+        <label for="accountSelect" style="color:#cbd5e1;font-weight:500;font-size:0.95rem;">🎵 Account:</label>
+        <select id="accountSelect" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:8px 16px;color:#f7f8fb;font-size:0.95rem;outline:none;cursor:pointer;min-width:140px;">
+          <option value="1">Account 1</option>
+          <option value="2">Account 2</option>
+        </select>
+        <button id="refreshAccountBtn" style="background:rgba(29,185,84,0.15);border:1px solid rgba(29,185,84,0.3);border-radius:12px;padding:8px 16px;color:#1db954;font-weight:600;cursor:pointer;transition:0.2s;">
+          🔄 Switch
+        </button>
+        <span id="accountStatus" style="color:#8a96a3;font-size:0.9rem;margin-left:4px;">Loading...</span>
+      </div>
+      
       <section class="player-section" aria-label="Currently listening widget">
         <div class="cover-column">
           <div class="cover-frame">
@@ -97,7 +111,7 @@
       <div id="stateMessage" class="state-message" aria-live="polite"></div>
     </div>
   </div>
-  <script src="../js/spotify-script.js"></script>
+  <script src="script.js"></script>
   <script>
     let lockTriggered = false;
 
