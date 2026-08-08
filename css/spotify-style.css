@@ -543,6 +543,25 @@ a:focus-visible {
   }
 }
 
+.device {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  min-width: 190px;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+.device-icon {
+  font-size: 1.1rem;
+}
+
 @media (max-width: 840px) {
   .player-section {
     grid-template-columns: 1fr;
@@ -581,7 +600,6 @@ a:focus-visible {
     display: none;
   }
 
-  /* Media Controls */
   .control-buttons-row {
     display: flex;
     flex-direction: row;
@@ -633,7 +651,6 @@ a:focus-visible {
     width: 100%;
   }
 
-  /* Keep media controls side-by-side */
   .control-buttons-row {
     display: flex;
     flex-direction: row;
@@ -648,22 +665,4 @@ a:focus-visible {
     padding: 11px 10px;
     font-size: 0.9rem;
   }
-
-.device {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: #cbd5e1;
-  font-size: 0.95rem;
-  min-width: 190px;
-  max-width: 100%;
-  line-height: 1.2;
-}
-
-.device-icon {
-  font-size: 1.1rem;
 }
