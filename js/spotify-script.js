@@ -48,27 +48,23 @@ let stateMessageTimeout = null;
 let defaultStateMessage = '🎵 Waiting for music to play...';
 
 function setStateMessage(text, autoDismiss = true) {
-  // Clear any existing timeout
   if (stateMessageTimeout) {
     clearTimeout(stateMessageTimeout);
     stateMessageTimeout = null;
   }
   
-  // Set the message
   stateMessage.textContent = text;
   
-  // If auto-dismiss is enabled, revert after 5 seconds
   if (autoDismiss) {
     stateMessageTimeout = setTimeout(() => {
       stateMessage.textContent = defaultStateMessage;
       stateMessageTimeout = null;
-    }, 5000); // 5 seconds
+    }, 5000);
   }
 }
 
 function updateDefaultStateMessage(message) {
   defaultStateMessage = message;
-  // If no timeout is active, update the displayed message
   if (!stateMessageTimeout) {
     stateMessage.textContent = message;
   }
@@ -236,31 +232,80 @@ function updateCover(imageUrl) {
 }
 
 function normalizeArtistNames(artists) {
-  if (!artists) return [];
+  if (!artists) return ['Unknown'];
   if (typeof artists === 'string') return [artists];
-  if (!Array.isArray(artists)) return [];
-  return artists.map(a => typeof a === 'string' ? a : a.name || 'Unknown');
+  if (!Array.isArray(artists)) return ['Unknown'];
+  return artists.map(a => {
+    if (typeof a === 'string') return a;
+    if (a && a.name) return a.name;
+    return 'Unknown';
+  }).filter(Boolean);
 }
+
+// ========================================
+// RENDER QUEUE - IMPROVED
+// ========================================
 
 function renderQueue(items) {
   queueList.innerHTML = '';
+  
   if (!items || !items.length) {
-    queueList.innerHTML = '<p class="queue-empty">No upcoming tracks.</p>';
+    queueList.innerHTML = `
+      <div class="queue-empty">
+        <p style="margin:0;font-weight:500;">🎵 No upcoming tracks</p>
+        <p style="margin:4px 0 0;font-size:0.85rem;color:#6b7a8a;">Queue will appear here when you have songs lined up</p>
+      </div>
+    `;
     return;
   }
-  items.slice(0, 5).forEach((item) => {
+  
+  const displayItems = items.slice(0, 5);
+  
+  displayItems.forEach((item, index) => {
     const div = document.createElement('div');
     div.className = 'queue-item';
+    div.style.animationDelay = `${index * 0.05}s`;
+    
+    // Get artist names properly
+    let artistNames = 'Unknown Artist';
+    if (item.artists) {
+      if (Array.isArray(item.artists)) {
+        artistNames = item.artists.join(', ');
+      } else if (typeof item.artists === 'string') {
+        artistNames = item.artists;
+      }
+    }
+    
+    const songName = item.song || item.name || 'Unknown track';
+    const albumImage = item.albumImage || 
+                       item.image || 
+                       'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
+    const duration = item.duration_ms || 0;
+    
     div.innerHTML = `
-      <img class="queue-thumb" src="${item.albumImage || 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg'}" alt="Album" loading="lazy" />
+      <img class="queue-thumb" 
+           src="${albumImage}" 
+           alt="${songName} album artwork" 
+           loading="lazy"
+           onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg'" />
       <div class="queue-labels">
-        <p class="queue-track">${item.song || 'Unknown'}</p>
-        <p class="queue-artist">${item.artists?.join(', ') || 'Unknown'}</p>
+        <p class="queue-track">${songName}</p>
+        <p class="queue-artist">${artistNames}</p>
       </div>
-      <span class="queue-duration">${formatTime(item.duration_ms || 0)}</span>
+      <span class="queue-duration">${formatTime(duration)}</span>
     `;
     queueList.appendChild(div);
   });
+  
+  if (items.length > 5) {
+    const more = document.createElement('div');
+    more.className = 'queue-empty';
+    more.style.marginTop = '6px';
+    more.style.padding = '10px';
+    more.style.fontSize = '0.85rem';
+    more.textContent = `+ ${items.length - 5} more tracks in queue`;
+    queueList.appendChild(more);
+  }
 }
 
 function renderDevice(device) {
@@ -354,7 +399,6 @@ function renderPlayingState(data) {
   queueSection.classList.remove('hidden');
   accountStatus.textContent = `Account ${currentAccount} • ${data.playing ? 'Playing' : 'Paused'}`;
   
-  // Update default state message based on playback status
   if (data.playing) {
     updateDefaultStateMessage(`🎵 Now playing: ${data.song} by ${data.artists?.join(', ') || 'Unknown'}`);
   } else {
@@ -363,7 +407,7 @@ function renderPlayingState(data) {
 }
 
 // ========================================
-// FETCH FUNCTIONS
+// FETCH FUNCTIONS - FIXED QUEUE ARTISTS
 // ========================================
 
 async function fetchQueue() {
@@ -379,46 +423,90 @@ async function fetchQueue() {
     }
     
     const data = await res.json();
-    console.log('📋 Queue response:', data);
+    console.log('📋 Queue response:', JSON.stringify(data, null, 2));
     
-    // Try multiple possible response structures
     let queueItems = [];
     
-    // Case 1: { queue: [...] }
+    // Function to extract artist names from various formats
+    function extractArtists(item) {
+      // Try multiple possible artist formats
+      if (item.artists && Array.isArray(item.artists)) {
+        // Check if artists are objects with name property
+        if (item.artists.length > 0 && typeof item.artists[0] === 'object') {
+          const names = item.artists.map(a => a.name || 'Unknown').filter(Boolean);
+          return names.length > 0 ? names : ['Unknown Artist'];
+        }
+        // If artists are strings
+        const strings = item.artists.filter(a => typeof a === 'string' && a);
+        return strings.length > 0 ? strings : ['Unknown Artist'];
+      }
+      
+      if (item.artist) {
+        if (typeof item.artist === 'string') return [item.artist];
+        if (item.artist.name) return [item.artist.name];
+      }
+      
+      // Check track object (nested)
+      if (item.track) {
+        if (item.track.artists && Array.isArray(item.track.artists)) {
+          const names = item.track.artists.map(a => a.name || 'Unknown').filter(Boolean);
+          return names.length > 0 ? names : ['Unknown Artist'];
+        }
+        if (item.track.artist) {
+          if (typeof item.track.artist === 'string') return [item.track.artist];
+          if (item.track.artist.name) return [item.track.artist.name];
+        }
+      }
+      
+      // Check if artists is a string with comma separation
+      if (item.artists && typeof item.artists === 'string') {
+        return item.artists.split(',').map(a => a.trim()).filter(Boolean);
+      }
+      
+      return ['Unknown Artist'];
+    }
+    
+    // Function to extract song name
+    function extractSongName(item) {
+      return item.song || 
+             item.name || 
+             item.track?.name || 
+             item.title || 
+             'Unknown Track';
+    }
+    
+    // Function to extract album image
+    function extractAlbumImage(item) {
+      return item.albumImage || 
+             item.image || 
+             item.album?.images?.[0]?.url || 
+             item.track?.album?.images?.[0]?.url ||
+             null;
+    }
+    
+    // Function to extract duration
+    function extractDuration(item) {
+      return item.duration_ms || 
+             item.duration || 
+             item.track?.duration_ms || 
+             0;
+    }
+    
+    // Try multiple possible response structures
     if (data.queue && Array.isArray(data.queue)) {
       queueItems = data.queue;
-    }
-    // Case 2: { items: [...] }
-    else if (data.items && Array.isArray(data.items)) {
+    } else if (data.items && Array.isArray(data.items)) {
       queueItems = data.items;
-    }
-    // Case 3: { tracks: [...] }
-    else if (data.tracks && Array.isArray(data.tracks)) {
+    } else if (data.tracks && Array.isArray(data.tracks)) {
       queueItems = data.tracks;
-    }
-    // Case 4: { data: { queue: [...] } }
-    else if (data.data && data.data.queue && Array.isArray(data.data.queue)) {
+    } else if (data.data && data.data.queue && Array.isArray(data.data.queue)) {
       queueItems = data.data.queue;
-    }
-    // Case 5: Direct array
-    else if (Array.isArray(data)) {
+    } else if (Array.isArray(data)) {
       queueItems = data;
-    }
-    // Case 6: Spotify's raw format with currently_playing
-    else if (data.queue && Array.isArray(data.queue)) {
-      queueItems = data.queue.map(item => ({
-        song: item.name || 'Unknown',
-        artists: item.artists?.map(a => a.name) || [],
-        albumImage: item.album?.images?.[0]?.url || null,
-        duration_ms: item.duration_ms || 0
-      }));
-    }
-    // Case 7: Check if it's wrapped in a property we don't know
-    else {
+    } else {
       // Try to find any array property
       for (const key in data) {
         if (Array.isArray(data[key]) && data[key].length > 0) {
-          // Check if it looks like a queue item
           const first = data[key][0];
           if (first && (first.name || first.song || first.track)) {
             console.log(`📋 Found queue in property: ${key}`);
@@ -429,21 +517,30 @@ async function fetchQueue() {
       }
     }
     
-    // Normalize the items
+    // Normalize the items with proper artist extraction
     if (queueItems.length > 0) {
-      queueItems = queueItems.map(item => ({
-        song: item.song || item.name || item.track?.name || 'Unknown',
-        artists: item.artists?.map(a => a.name) || 
-                 (item.artist ? [item.artist] : ['Unknown']),
-        albumImage: item.albumImage || 
-                    item.album?.images?.[0]?.url || 
-                    item.image || 
-                    null,
-        duration_ms: item.duration_ms || item.track?.duration_ms || 0
-      }));
+      queueItems = queueItems.map(item => {
+        const artists = extractArtists(item);
+        const songName = extractSongName(item);
+        const albumImage = extractAlbumImage(item);
+        const duration = extractDuration(item);
+        
+        return {
+          song: songName,
+          artists: artists,
+          albumImage: albumImage,
+          duration_ms: duration
+        };
+      });
     }
     
     console.log(`📋 Queue items found: ${queueItems.length}`);
+    
+    // Log first few items to debug
+    if (queueItems.length > 0) {
+      console.log('📋 First queue item:', JSON.stringify(queueItems[0], null, 2));
+    }
+    
     return queueItems;
     
   } catch (error) {
@@ -481,7 +578,7 @@ async function fetchCurrentlyPlaying() {
 }
 
 // ========================================
-// MAIN REFRESH - AUTOMATIC!
+// MAIN REFRESH
 // ========================================
 
 async function refreshAll() {
