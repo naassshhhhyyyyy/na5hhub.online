@@ -5,7 +5,7 @@ const ACTION_PASSWORD_STORAGE_KEY = '2007';
 
 // Account management
 let currentAccount = 1;
-const MAX_ACCOUNTS = 5;
+const MAX_ACCOUNTS = 2;
 
 // DOM Elements
 const coverImage = document.getElementById('cover');
@@ -28,8 +28,7 @@ const previousButton = document.getElementById('previousButton');
 const playPauseButton = document.getElementById('playPauseButton');
 const nextButton = document.getElementById('nextButton');
 const accountSelect = document.getElementById('accountSelect');
-const refreshAccountBtn = document.getElementById('refreshAccountBtn');
-const accountStatus = document.getElementById('accountStatus');
+const accountStatus = document.getElementById('accountStatus'); // Remove refreshAccountBtn
 
 let trackState = {
   playing: false,
@@ -583,12 +582,9 @@ previousButton.addEventListener('click', handlePreviousTrack);
 playPauseButton.addEventListener('click', handlePlayPause);
 nextButton.addEventListener('click', handleNextTrack);
 
+// Auto-switch when dropdown changes
 accountSelect.addEventListener('change', (e) => {
   switchAccount(e.target.value);
-});
-
-refreshAccountBtn.addEventListener('click', () => {
-  switchAccount(accountSelect.value);
 });
 
 // ========================================
