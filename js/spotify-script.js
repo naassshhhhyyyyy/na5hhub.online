@@ -1,11 +1,13 @@
 const API_BASE = 'https://spotify-auth-g08f.onrender.com';
-const REFRESH_INTERVAL = 5000;
+const REFRESH_INTERVAL = 2000; // 2 seconds - mabilis na update
 const PAUSE_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 const ACTION_PASSWORD_STORAGE_KEY = '2007';
 
-// Account management
 let currentAccount = 1;
-const MAX_ACCOUNTS = 2;
+let refreshTimer = null;
+let progressAnimation = null;
+let currentTrackId = null;
+let pausedSince = null;
 
 // DOM Elements
 const coverImage = document.getElementById('cover');
@@ -28,7 +30,7 @@ const previousButton = document.getElementById('previousButton');
 const playPauseButton = document.getElementById('playPauseButton');
 const nextButton = document.getElementById('nextButton');
 const accountSelect = document.getElementById('accountSelect');
-const accountStatus = document.getElementById('accountStatus'); // Remove refreshAccountBtn
+const accountStatus = document.getElementById('accountStatus');
 
 let trackState = {
   playing: false,
@@ -37,39 +39,29 @@ let trackState = {
   updatedAt: Date.now(),
   spotifyUrl: '',
 };
-let refreshTimer = null;
-let progressAnimation = null;
-let currentTrackId = null;
-let pausedSince = null;
-let completedTrackKey = null;
 
 // ========================================
-// ACCOUNT MANAGEMENT
+// API URLS WITH CACHE BUSTING
 // ========================================
 
-function getSpotifyApiUrl(account = null) {
-  const acc = account || currentAccount;
-  return `${API_BASE}/api/spotify?account=${acc}`;
+function getSpotifyApiUrl() {
+  return `${API_BASE}/api/spotify?account=${currentAccount}&_=${Date.now()}`;
 }
 
-function getQueueApiUrl(account = null) {
-  const acc = account || currentAccount;
-  return `${API_BASE}/api/queue?account=${acc}`;
+function getQueueApiUrl() {
+  return `${API_BASE}/api/queue?account=${currentAccount}&_=${Date.now()}`;
 }
 
-function getToggleApiUrl(account = null) {
-  const acc = account || currentAccount;
-  return `${API_BASE}/api/toggle?account=${acc}`;
+function getToggleApiUrl() {
+  return `${API_BASE}/api/toggle?account=${currentAccount}&_=${Date.now()}`;
 }
 
-function getPreviousApiUrl(account = null) {
-  const acc = account || currentAccount;
-  return `${API_BASE}/api/previous?account=${acc}`;
+function getPreviousApiUrl() {
+  return `${API_BASE}/api/previous?account=${currentAccount}&_=${Date.now()}`;
 }
 
-function getNextApiUrl(account = null) {
-  const acc = account || currentAccount;
-  return `${API_BASE}/api/next?account=${acc}`;
+function getNextApiUrl() {
+  return `${API_BASE}/api/next?account=${currentAccount}&_=${Date.now()}`;
 }
 
 // ========================================
@@ -77,15 +69,9 @@ function getNextApiUrl(account = null) {
 // ========================================
 
 function formatTime(ms) {
+  if (!ms || ms < 0) return '0:00';
   const minutes = Math.floor(ms / 60000);
   const seconds = Math.floor((ms % 60000) / 1000);
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
-function formatCountdown(ms) {
-  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
@@ -104,41 +90,29 @@ function updatePlayPauseButtonLabel(isPlaying) {
 
 function promptForPassword(actionName) {
   const password = window.prompt(`Enter password to ${actionName}:`);
-  if (!password) {
-    throw new Error('Password required.');
-  }
-  localStorage.setItem(ACTION_PASSWORD_STORAGE_KEY, password);
+  if (!password) throw new Error('Password required.');
+  localStorage.setItem('2007', password);
   return password;
 }
 
 // ========================================
-// PROTECTED ACTIONS (with account support)
+// PROTECTED ACTIONS
 // ========================================
 
-async function protectedAction(actionName, endpoint, method = 'POST', body = null) {
+async function protectedAction(actionName, endpoint, method = 'POST') {
   const password = promptForPassword(actionName);
-  const options = {
+  const response = await fetch(endpoint, {
     method,
     headers: {
       'Content-Type': 'application/json',
       'x-action-password': password,
     },
-  };
-  if (body !== null) {
-    options.body = JSON.stringify(body);
-  }
-  const response = await fetch(endpoint, options);
-  const responseText = await response.text();
-  let data = null;
-  try {
-    data = responseText ? JSON.parse(responseText) : null;
-  } catch {
-    data = responseText;
-  }
+  });
   if (!response.ok) {
-    throw new Error(data?.error || data?.message || 'Action failed.');
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.error || 'Action failed.');
   }
-  return data;
+  return response.json();
 }
 
 // ========================================
@@ -148,7 +122,7 @@ async function protectedAction(actionName, endpoint, method = 'POST', body = nul
 async function handlePreviousTrack() {
   try {
     await protectedAction('go to the previous track', getPreviousApiUrl());
-    setStateMessage('⏮ Moved to the previous track.');
+    setStateMessage('⏮ Moved to previous track.');
     await refreshAll();
   } catch (error) {
     setStateMessage(error.message || 'Unable to change track.');
@@ -168,7 +142,7 @@ async function handlePlayPause() {
 async function handleNextTrack() {
   try {
     await protectedAction('go to the next track', getNextApiUrl());
-    setStateMessage('⏭ Moved to the next track.');
+    setStateMessage('⏭ Moved to next track.');
     await refreshAll();
   } catch (error) {
     setStateMessage(error.message || 'Unable to change track.');
@@ -211,13 +185,6 @@ function startProgressLoop() {
     const elapsed = Date.now() - startTime;
     const currentMs = Math.min(baseProgress + elapsed, trackState.durationMs);
     updateProgress(currentMs, trackState.durationMs);
-
-    if (currentMs >= trackState.durationMs && trackState.durationMs > 0) {
-      trackState.playing = false;
-      stopProgress();
-      return;
-    }
-
     if (currentMs < trackState.durationMs) {
       progressAnimation = requestAnimationFrame(animate);
     }
@@ -225,55 +192,16 @@ function startProgressLoop() {
   progressAnimation = requestAnimationFrame(animate);
 }
 
-function getDominantColor(img) {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  const width = 20;
-  const height = 20;
-  canvas.width = width;
-  canvas.height = height;
-  ctx.drawImage(img, 0, 0, width, height);
-  const data = ctx.getImageData(0, 0, width, height).data;
-  let r = 0, g = 0, b = 0, count = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    const alpha = data[i + 3];
-    if (alpha > 64) {
-      r += data[i];
-      g += data[i + 1];
-      b += data[i + 2];
-      count += 1;
-    }
-  }
-  if (!count) return 'rgba(29, 185, 84, 0.18)';
-  return `rgba(${Math.round(r / count)}, ${Math.round(g / count)}, ${Math.round(b / count)}, 0.22)`;
-}
-
-function setBackgroundColor(color) {
-  document.body.style.background = `radial-gradient(circle at top left, ${color}, transparent 18%),
-    radial-gradient(circle at 80% 10%, rgba(104, 138, 255, 0.12), transparent 20%),
-    linear-gradient(180deg, #050607 0%, #0c1115 45%, #080909 100%)`;
-}
-
 function updateCover(imageUrl) {
-  if (!imageUrl || imageUrl === '') {
+  if (!imageUrl) {
     imageUrl = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
   }
-  const tempImage = new Image();
-  tempImage.crossOrigin = 'Anonymous';
-  tempImage.src = imageUrl;
-  tempImage.onload = () => {
-    coverImage.classList.remove('fade-in');
-    coverImage.src = imageUrl;
-    coverImage.onload = () => {
-      coverImage.classList.add('fade-in');
-      const dominant = getDominantColor(coverImage);
-      coverGlow.style.background = `radial-gradient(circle at 35% 35%, ${dominant}, transparent 45%)`;
-      setBackgroundColor(dominant);
-    };
+  coverImage.src = imageUrl;
+  coverImage.onload = () => {
+    coverImage.classList.add('fade-in');
   };
-  tempImage.onerror = () => {
+  coverImage.onerror = () => {
     coverImage.src = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
-    coverGlow.style.background = 'radial-gradient(circle at 35% 35%, rgba(29, 185, 84, 0.2), transparent 45%)';
   };
 }
 
@@ -281,53 +209,39 @@ function normalizeArtistNames(artists) {
   if (!artists) return [];
   if (typeof artists === 'string') return [artists];
   if (!Array.isArray(artists)) return [];
-  return artists.map((artist) => {
-    if (!artist) return 'Unknown artist';
-    if (typeof artist === 'string') return artist;
-    return artist.name || artist.username || 'Unknown artist';
-  });
-}
-
-function normalizeQueueData(items) {
-  if (!items) return [];
-  if (items.data) items = items.data;
-  if (Array.isArray(items)) {
-    return items.map((item) => ({
-      song: item.song || item.name || item.track?.name,
-      artists: normalizeArtistNames(item.artists) || normalizeArtistNames(item.track?.artists) || [],
-      albumImage: item.albumImage || item.track?.album?.images?.[0]?.url || item.album?.images?.[0]?.url || item.image || item.track?.album?.image || '',
-      duration_ms: item.duration_ms || item.track?.duration_ms || 0,
-    }));
-  }
-  const payload = Array.isArray(items.queue) ? items.queue : Array.isArray(items.tracks) ? items.tracks : Array.isArray(items.items) ? items.items : [];
-  return payload.map((item) => ({
-    song: item.song || item.name || item.track?.name,
-    artists: normalizeArtistNames(item.artists) || normalizeArtistNames(item.track?.artists) || [],
-    albumImage: item.albumImage || item.track?.album?.images?.[0]?.url || item.album?.images?.[0]?.url || item.image || item.track?.album?.image || '',
-    duration_ms: item.duration_ms || item.track?.duration_ms || 0,
-  }));
+  return artists.map(a => typeof a === 'string' ? a : a.name || 'Unknown');
 }
 
 function renderQueue(items) {
-  const queueItems = normalizeQueueData(items);
   queueList.innerHTML = '';
-  if (!queueItems.length) {
-    queueList.innerHTML = '<p class="queue-empty">No upcoming tracks found. Queue will appear here.</p>';
+  if (!items || !items.length) {
+    queueList.innerHTML = '<p class="queue-empty">No upcoming tracks.</p>';
     return;
   }
-  queueItems.slice(0, 5).forEach((item) => {
-    const queueItem = document.createElement('div');
-    queueItem.className = 'queue-item';
-    queueItem.innerHTML = `
-      <img class="queue-thumb" src="${item.albumImage || 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg'}" alt="${item.song || 'Queued track'} album artwork" loading="lazy" />
+  items.slice(0, 5).forEach((item) => {
+    const div = document.createElement('div');
+    div.className = 'queue-item';
+    div.innerHTML = `
+      <img class="queue-thumb" src="${item.albumImage || 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg'}" alt="Album" loading="lazy" />
       <div class="queue-labels">
-        <p class="queue-track">${item.song || 'Unknown track'}</p>
-        <p class="queue-artist">${item.artists?.join(', ') || 'Unknown artist'}</p>
+        <p class="queue-track">${item.song || 'Unknown'}</p>
+        <p class="queue-artist">${item.artists?.join(', ') || 'Unknown'}</p>
       </div>
       <span class="queue-duration">${formatTime(item.duration_ms || 0)}</span>
     `;
-    queueList.appendChild(queueItem);
+    queueList.appendChild(div);
   });
+}
+
+function renderDevice(device) {
+  const el = document.getElementById('device');
+  if (!device) {
+    el.innerHTML = '🎧 Unknown device';
+    return;
+  }
+  const icons = { Computer: '💻', Smartphone: '📱', Speaker: '🔊', TV: '📺', 'Game Console': '🎮' };
+  const icon = icons[device.type] || '🎧';
+  el.innerHTML = `<span>${icon}</span> Playing on <strong>${device.name || 'Unknown'}</strong>`;
 }
 
 // ========================================
@@ -335,92 +249,77 @@ function renderQueue(items) {
 // ========================================
 
 function renderIdleState() {
-  setStatus('💤 Inactivity', 'paused');
+  setStatus('💤 Inactive', 'paused');
   titleElement.textContent = 'No track playing';
-  artistElement.textContent = 'Playback has been inactive for over 10 minutes';
-  albumElement.textContent = 'No playback activity available.';
+  artistElement.textContent = 'Playback is inactive';
+  albumElement.textContent = 'No playback activity';
   coverImage.src = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
-  coverImage.alt = 'Spotify Album';
   spotifyLink.href = '#';
-  spotifyLink.setAttribute('aria-label', 'Spotify unavailable');
-  spotifyLink.setAttribute('aria-disabled', 'true');
   spotifyLink.classList.add('disabled');
-  spotifyLink.innerHTML = '<span class="button-icon" aria-hidden="true">⚠</span>Cannot open — no track playing';
+  spotifyLink.innerHTML = '⚠ Cannot open';
   copyLinkButton.disabled = true;
-  copyLinkButton.setAttribute('aria-disabled', 'true');
   copyLinkButton.classList.add('disabled');
-  copyLinkButton.innerHTML = '<span class="button-icon" aria-hidden="true">🔗</span>Copy unavailable';
-  setStateMessage('Inactivity — no track playing.');
   updatePlayPauseButtonLabel(false);
   updateProgress(0, 0);
   queueSection.classList.add('hidden');
-  currentTrackId = null;
-  pausedSince = null;
-  renderDevice(null);
   stopProgress();
   accountStatus.textContent = `Account ${currentAccount} • Idle`;
 }
 
 function renderErrorState(message) {
-  setStatus('⚠ Spotify Offline', 'error');
+  setStatus('⚠ Offline', 'error');
   titleElement.textContent = 'Spotify Offline';
-  artistElement.textContent = 'Unable to connect.';
+  artistElement.textContent = 'Unable to connect';
   albumElement.textContent = message;
   coverImage.src = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
-  coverImage.alt = 'Spotify error';
-  spotifyLink.href = '#';
-  spotifyLink.setAttribute('aria-label', 'Spotify unavailable');
-  copyLinkButton.disabled = true;
-  setStateMessage('Retrying automatically every 5 seconds.');
   updatePlayPauseButtonLabel(false);
   updateProgress(0, 0);
-  renderQueue([]);
-  renderDevice(null);
-  stopProgress();
   accountStatus.textContent = `Account ${currentAccount} • Error`;
 }
 
-function renderPlayingState(data, messageOverride = null) {
-  const trackId = `${data.song}-${data.album}`;
+function renderPlayingState(data) {
+  const trackId = data.song + data.album;
+  const isNewTrack = trackId !== currentTrackId;
+  
+  if (isNewTrack) {
+    currentTrackId = trackId;
+    console.log(`🎵 Now Playing: ${data.song} - ${data.artists?.join(', ')}`);
+  }
+  
   setStatus(data.playing ? '🟢 Listening Now' : '🟡 Paused', data.playing ? 'live' : 'paused');
-  titleElement.textContent = data.song || 'Unknown track';
-  artistElement.textContent = normalizeArtistNames(data.artists).join(', ') || 'Unknown artist';
-  albumElement.textContent = data.album || 'Unknown album';
-  spotifyLink.href = data.spotifyUrl || 'https://open.spotify.com';
-  spotifyLink.setAttribute('aria-label', `Open ${data.song} in Spotify`);
-  spotifyLink.removeAttribute('aria-disabled');
+  titleElement.textContent = data.song || 'Unknown';
+  artistElement.textContent = data.artists?.join(', ') || 'Unknown';
+  albumElement.textContent = data.album || 'Unknown';
+  
+  spotifyLink.href = data.spotifyUrl || '#';
   spotifyLink.classList.remove('disabled');
-  spotifyLink.innerHTML = '<span class="button-icon" aria-hidden="true">♬</span>Open in Spotify';
-  const canCopy = Boolean(data.spotifyUrl);
-  copyLinkButton.disabled = !canCopy;
-  copyLinkButton.removeAttribute('aria-disabled');
-  copyLinkButton.classList.toggle('disabled', !canCopy);
-  copyLinkButton.innerHTML = canCopy ? '<span class="button-icon" aria-hidden="true">🔗</span>Copy Link' : '<span class="button-icon" aria-hidden="true">🔗</span>Copy unavailable';
+  spotifyLink.innerHTML = '♬ Open in Spotify';
+  
+  copyLinkButton.disabled = !data.spotifyUrl;
+  copyLinkButton.classList.toggle('disabled', !data.spotifyUrl);
+  
   trackState = {
-    playing: Boolean(data.playing),
+    playing: data.playing || false,
     progressMs: data.progress_ms || 0,
     durationMs: data.duration_ms || 0,
-    updatedAt: Date.now(),
     spotifyUrl: data.spotifyUrl || '',
-    song: data.song || 'Unknown track',
-    artists: normalizeArtistNames(data.artists),
-    album: data.album || 'Unknown album',
-    albumImage: data.albumImage || '',
   };
-  if (trackId !== currentTrackId) {
-    currentTrackId = trackId;
-    completedTrackKey = null;
-    updateCover(data.albumImage || 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg');
+  
+  if (isNewTrack) {
+    updateCover(data.albumImage);
+    setTimeout(updateMarquee, 100);
   }
+  
   updateProgress(trackState.progressMs, trackState.durationMs);
-  updateMarquee();
   updatePlayPauseButtonLabel(trackState.playing);
+  
   if (trackState.playing) {
     startProgressLoop();
   } else {
     stopProgress();
   }
-  setStateMessage(messageOverride || (data.playing ? 'Live listening activity is displayed here.' : 'Playback is paused. The last track stays visible for 10 minutes.'));
+  
+  queueSection.classList.remove('hidden');
   accountStatus.textContent = `Account ${currentAccount} • ${data.playing ? 'Playing' : 'Paused'}`;
 }
 
@@ -430,124 +329,50 @@ function renderPlayingState(data, messageOverride = null) {
 
 async function fetchQueue() {
   try {
-    const response = await fetch(getQueueApiUrl(), { cache: 'no-store' });
-    if (!response.ok) return [];
-    return await response.json();
-  } catch (error) {
-    console.error('Queue fetch error:', error);
+    const res = await fetch(getQueueApiUrl(), { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.queue || data.items || data.tracks || [];
+  } catch {
     return [];
   }
 }
 
 async function fetchCurrentlyPlaying() {
-  try {
-    const response = await fetch(getSpotifyApiUrl(), { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error(`Server responded ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
+  const res = await fetch(getSpotifyApiUrl(), { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 // ========================================
-// DEVICE RENDER
-// ========================================
-
-function getDeviceIcon(type) {
-  switch (type) {
-    case 'Computer': return '💻';
-    case 'Smartphone': return '📱';
-    case 'Speaker': return '🔊';
-    case 'TV': return '📺';
-    case 'Game Console': return '🎮';
-    case 'Cast Video': return '📺';
-    case 'Cast Audio': return '🔈';
-    case 'AVR': return '📻';
-    default: return '🎧';
-  }
-}
-
-function getDeviceLabel(device) {
-  if (!device) return 'Unknown device';
-  const name = device.name?.trim();
-  const type = device.type?.trim();
-  const hasName = name && !/^unknown/i.test(name);
-  const hasType = type && !/^unknown/i.test(type);
-  const typeLabel = hasType ? type.charAt(0).toUpperCase() + type.slice(1) : '';
-  if (hasType && hasName) {
-    if (name.toLowerCase().includes(type.toLowerCase())) {
-      return name;
-    }
-    return `${typeLabel} — ${name}`;
-  }
-  if (hasType) return typeLabel;
-  if (hasName) return name;
-  return 'Unknown device';
-}
-
-function renderDevice(device) {
-  const deviceElement = document.getElementById('device');
-  if (!device || (!device.name && !device.type)) {
-    deviceElement.innerHTML = '🎧 Unknown device';
-    return;
-  }
-  const icon = getDeviceIcon(device.type || '');
-  const label = getDeviceLabel(device);
-  deviceElement.innerHTML = `
-    <span class="device-icon">${icon}</span>
-    <span>Playing on <strong>${label}</strong></span>
-  `;
-}
-
-// ========================================
-// MAIN REFRESH
+// MAIN REFRESH - AUTOMATIC!
 // ========================================
 
 async function refreshAll() {
   try {
     const data = await fetchCurrentlyPlaying();
-    
-    // Update account status
-    if (data.account) {
-      accountStatus.textContent = `Account ${data.account} • ${data.playing ? 'Playing' : 'Paused'}`;
-    }
-    
     renderDevice(data.device || null);
+    
     const queue = await fetchQueue();
     renderQueue(queue);
-
+    
     if (!data.playing) {
       if (data.song) {
-        if (!pausedSince) {
-          pausedSince = Date.now();
-        }
-        const remainingMs = PAUSE_IDLE_TIMEOUT_MS - (Date.now() - pausedSince);
-        if (remainingMs > 0) {
-          renderPlayingState(data, `Paused — switching to inactivity in ${formatCountdown(remainingMs)}.`);
-          queueSection.classList.remove('hidden');
-        } else {
-          renderIdleState();
-        }
+        renderPlayingState(data);
       } else {
         renderIdleState();
       }
     } else {
-      pausedSince = null;
       renderPlayingState(data);
-      queueSection.classList.remove('hidden');
     }
   } catch (error) {
-    console.error('Spotify fetch error:', error);
-    renderErrorState(error.message || 'Unable to load Spotify data.');
+    console.error('Refresh error:', error);
+    renderErrorState(error.message);
   }
 }
 
 function scheduleRefresh() {
-  if (refreshTimer) {
-    clearInterval(refreshTimer);
-  }
+  if (refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL);
 }
 
@@ -557,7 +382,7 @@ function scheduleRefresh() {
 
 function switchAccount(account) {
   currentAccount = parseInt(account);
-  pausedSince = null;
+  currentTrackId = null; // Reset para ma-force ang update
   stopProgress();
   accountStatus.textContent = `Account ${currentAccount} • Loading...`;
   refreshAll();
@@ -568,13 +393,12 @@ function switchAccount(account) {
 // ========================================
 
 copyLinkButton.addEventListener('click', async () => {
-  const url = trackState.spotifyUrl;
-  if (!url) return;
+  if (!trackState.spotifyUrl) return;
   try {
-    await navigator.clipboard.writeText(url);
-    setStateMessage('✅ Track link copied to clipboard.');
-  } catch (error) {
-    setStateMessage('❌ Unable to copy link. Try again.');
+    await navigator.clipboard.writeText(trackState.spotifyUrl);
+    setStateMessage('✅ Link copied!');
+  } catch {
+    setStateMessage('❌ Copy failed.');
   }
 });
 
@@ -582,25 +406,20 @@ previousButton.addEventListener('click', handlePreviousTrack);
 playPauseButton.addEventListener('click', handlePlayPause);
 nextButton.addEventListener('click', handleNextTrack);
 
-// Auto-switch when dropdown changes
-accountSelect.addEventListener('change', (e) => {
-  switchAccount(e.target.value);
-});
+accountSelect.addEventListener('change', (e) => switchAccount(e.target.value));
 
 // ========================================
 // INIT
 // ========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Check URL params for account
-  const urlParams = new URLSearchParams(window.location.search);
-  const accountParam = urlParams.get('account');
-  if (accountParam) {
-    currentAccount = parseInt(accountParam);
+  const params = new URLSearchParams(window.location.search);
+  const account = params.get('account');
+  if (account) {
+    currentAccount = parseInt(account);
     accountSelect.value = currentAccount;
   }
   
-  accountStatus.textContent = `Account ${currentAccount} • Loading...`;
   refreshAll();
   scheduleRefresh();
 });
