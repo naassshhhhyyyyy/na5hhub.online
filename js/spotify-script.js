@@ -329,63 +329,88 @@ function renderPlayingState(data) {
 
 async function fetchQueue() {
   try {
-    const res = await fetch(getQueueApiUrl(), { cache: 'no-store' });
-    if (!res.ok) return [];
+    const url = getQueueApiUrl();
+    console.log('📋 Fetching queue from:', url);
+    
+    const res = await fetch(url, { cache: 'no-store' });
+    
+    if (!res.ok) {
+      console.warn(`Queue API returned ${res.status}`);
+      return [];
+    }
+    
     const data = await res.json();
-    return data.queue || data.items || data.tracks || [];
-  } catch {
+    console.log('📋 Queue response:', data);
+    
+    // Try multiple possible response structures
+    let queueItems = [];
+    
+    // Case 1: { queue: [...] }
+    if (data.queue && Array.isArray(data.queue)) {
+      queueItems = data.queue;
+    }
+    // Case 2: { items: [...] }
+    else if (data.items && Array.isArray(data.items)) {
+      queueItems = data.items;
+    }
+    // Case 3: { tracks: [...] }
+    else if (data.tracks && Array.isArray(data.tracks)) {
+      queueItems = data.tracks;
+    }
+    // Case 4: { data: { queue: [...] } }
+    else if (data.data && data.data.queue && Array.isArray(data.data.queue)) {
+      queueItems = data.data.queue;
+    }
+    // Case 5: Direct array
+    else if (Array.isArray(data)) {
+      queueItems = data;
+    }
+    // Case 6: Spotify's raw format with currently_playing
+    else if (data.queue && Array.isArray(data.queue)) {
+      queueItems = data.queue.map(item => ({
+        song: item.name || 'Unknown',
+        artists: item.artists?.map(a => a.name) || [],
+        albumImage: item.album?.images?.[0]?.url || null,
+        duration_ms: item.duration_ms || 0
+      }));
+    }
+    // Case 7: Check if it's wrapped in a property we don't know
+    else {
+      // Try to find any array property
+      for (const key in data) {
+        if (Array.isArray(data[key]) && data[key].length > 0) {
+          // Check if it looks like a queue item
+          const first = data[key][0];
+          if (first && (first.name || first.song || first.track)) {
+            console.log(`📋 Found queue in property: ${key}`);
+            queueItems = data[key];
+            break;
+          }
+        }
+      }
+    }
+    
+    // Normalize the items
+    if (queueItems.length > 0) {
+      queueItems = queueItems.map(item => ({
+        song: item.song || item.name || item.track?.name || 'Unknown',
+        artists: item.artists?.map(a => a.name) || 
+                 (item.artist ? [item.artist] : ['Unknown']),
+        albumImage: item.albumImage || 
+                    item.album?.images?.[0]?.url || 
+                    item.image || 
+                    null,
+        duration_ms: item.duration_ms || item.track?.duration_ms || 0
+      }));
+    }
+    
+    console.log(`📋 Queue items found: ${queueItems.length}`);
+    return queueItems;
+    
+  } catch (error) {
+    console.error('Queue fetch error:', error);
     return [];
   }
-}
-
-async function fetchCurrentlyPlaying() {
-  const res = await fetch(getSpotifyApiUrl(), { cache: 'no-store' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-// ========================================
-// MAIN REFRESH - AUTOMATIC!
-// ========================================
-
-async function refreshAll() {
-  try {
-    const data = await fetchCurrentlyPlaying();
-    renderDevice(data.device || null);
-    
-    const queue = await fetchQueue();
-    renderQueue(queue);
-    
-    if (!data.playing) {
-      if (data.song) {
-        renderPlayingState(data);
-      } else {
-        renderIdleState();
-      }
-    } else {
-      renderPlayingState(data);
-    }
-  } catch (error) {
-    console.error('Refresh error:', error);
-    renderErrorState(error.message);
-  }
-}
-
-function scheduleRefresh() {
-  if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL);
-}
-
-// ========================================
-// ACCOUNT SWITCHING
-// ========================================
-
-function switchAccount(account) {
-  currentAccount = parseInt(account);
-  currentTrackId = null; // Reset para ma-force ang update
-  stopProgress();
-  accountStatus.textContent = `Account ${currentAccount} • Loading...`;
-  refreshAll();
 }
 
 // ========================================
