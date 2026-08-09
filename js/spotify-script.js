@@ -1,5 +1,5 @@
 const API_BASE = 'https://spotify-auth-g08f.onrender.com';
-const REFRESH_INTERVAL = 2000; // 2 seconds - mabilis na update
+const REFRESH_INTERVAL = 2000;
 const PAUSE_IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 const ACTION_PASSWORD_STORAGE_KEY = '2007';
 
@@ -41,6 +41,40 @@ let trackState = {
 };
 
 // ========================================
+// STATE MESSAGE WITH AUTO-DISMISS
+// ========================================
+
+let stateMessageTimeout = null;
+let defaultStateMessage = '🎵 Waiting for music to play...';
+
+function setStateMessage(text, autoDismiss = true) {
+  // Clear any existing timeout
+  if (stateMessageTimeout) {
+    clearTimeout(stateMessageTimeout);
+    stateMessageTimeout = null;
+  }
+  
+  // Set the message
+  stateMessage.textContent = text;
+  
+  // If auto-dismiss is enabled, revert after 5 seconds
+  if (autoDismiss) {
+    stateMessageTimeout = setTimeout(() => {
+      stateMessage.textContent = defaultStateMessage;
+      stateMessageTimeout = null;
+    }, 5000); // 5 seconds
+  }
+}
+
+function updateDefaultStateMessage(message) {
+  defaultStateMessage = message;
+  // If no timeout is active, update the displayed message
+  if (!stateMessageTimeout) {
+    stateMessage.textContent = message;
+  }
+}
+
+// ========================================
 // API URLS WITH CACHE BUSTING
 // ========================================
 
@@ -78,10 +112,6 @@ function formatTime(ms) {
 function setStatus(text, variant = 'live') {
   statusText.textContent = text;
   statusBadge.className = `status-badge ${variant}`;
-}
-
-function setStateMessage(text) {
-  stateMessage.textContent = text;
 }
 
 function updatePlayPauseButtonLabel(isPlaying) {
@@ -122,10 +152,10 @@ async function protectedAction(actionName, endpoint, method = 'POST') {
 async function handlePreviousTrack() {
   try {
     await protectedAction('go to the previous track', getPreviousApiUrl());
-    setStateMessage('⏮ Moved to previous track.');
+    setStateMessage('⏮ Moved to previous track.', true);
     await refreshAll();
   } catch (error) {
-    setStateMessage(error.message || 'Unable to change track.');
+    setStateMessage('❌ ' + (error.message || 'Unable to change track.'), true);
   }
 }
 
@@ -133,19 +163,19 @@ async function handlePlayPause() {
   try {
     await protectedAction('toggle play/pause', getToggleApiUrl(), 'PUT');
     await refreshAll();
-    setStateMessage('⏯ Playback toggled.');
+    setStateMessage('⏯ Playback toggled.', true);
   } catch (error) {
-    setStateMessage(error.message || 'Unable to toggle playback.');
+    setStateMessage('❌ ' + (error.message || 'Unable to toggle playback.'), true);
   }
 }
 
 async function handleNextTrack() {
   try {
     await protectedAction('go to the next track', getNextApiUrl());
-    setStateMessage('⏭ Moved to next track.');
+    setStateMessage('⏭ Moved to next track.', true);
     await refreshAll();
   } catch (error) {
-    setStateMessage(error.message || 'Unable to change track.');
+    setStateMessage('❌ ' + (error.message || 'Unable to change track.'), true);
   }
 }
 
@@ -264,6 +294,7 @@ function renderIdleState() {
   queueSection.classList.add('hidden');
   stopProgress();
   accountStatus.textContent = `Account ${currentAccount} • Idle`;
+  updateDefaultStateMessage('💤 No track playing. Start some music!');
 }
 
 function renderErrorState(message) {
@@ -275,6 +306,7 @@ function renderErrorState(message) {
   updatePlayPauseButtonLabel(false);
   updateProgress(0, 0);
   accountStatus.textContent = `Account ${currentAccount} • Error`;
+  updateDefaultStateMessage('⚠ ' + message);
 }
 
 function renderPlayingState(data) {
@@ -321,6 +353,13 @@ function renderPlayingState(data) {
   
   queueSection.classList.remove('hidden');
   accountStatus.textContent = `Account ${currentAccount} • ${data.playing ? 'Playing' : 'Paused'}`;
+  
+  // Update default state message based on playback status
+  if (data.playing) {
+    updateDefaultStateMessage(`🎵 Now playing: ${data.song} by ${data.artists?.join(', ') || 'Unknown'}`);
+  } else {
+    updateDefaultStateMessage(`⏸ Paused: ${data.song}`);
+  }
 }
 
 // ========================================
@@ -413,6 +452,89 @@ async function fetchQueue() {
   }
 }
 
+async function fetchCurrentlyPlaying() {
+  try {
+    const url = getSpotifyApiUrl();
+    console.log('🎵 Fetching currently playing from:', url);
+    
+    const res = await fetch(url, { cache: 'no-store' });
+    
+    if (res.status === 401) {
+      const data = await res.json().catch(() => ({}));
+      console.warn('⚠ Account not configured:', data.error);
+      return { 
+        playing: false, 
+        song: null,
+        _error: data.error || 'Account not configured'
+      };
+    }
+    
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    
+    return res.json();
+  } catch (error) {
+    console.error('Fetch error:', error);
+    throw error;
+  }
+}
+
+// ========================================
+// MAIN REFRESH - AUTOMATIC!
+// ========================================
+
+async function refreshAll() {
+  try {
+    const data = await fetchCurrentlyPlaying();
+    
+    if (data && data._error) {
+      setStatus('⚠ Account Issue', 'error');
+      setStateMessage(`Account ${currentAccount}: ${data._error}`, false);
+      accountStatus.textContent = `Account ${currentAccount} • ⚠ Not Configured`;
+      updateDefaultStateMessage(`⚠ ${data._error}`);
+      return;
+    }
+    
+    renderDevice(data.device || null);
+    
+    const queue = await fetchQueue();
+    renderQueue(queue);
+    
+    if (!data.playing) {
+      if (data.song) {
+        renderPlayingState(data);
+      } else {
+        renderIdleState();
+      }
+    } else {
+      renderPlayingState(data);
+    }
+  } catch (error) {
+    console.error('Refresh error:', error);
+    renderErrorState(error.message);
+    setStateMessage('❌ ' + error.message, true);
+  }
+}
+
+function scheduleRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL);
+}
+
+// ========================================
+// ACCOUNT SWITCHING
+// ========================================
+
+function switchAccount(account) {
+  currentAccount = parseInt(account);
+  currentTrackId = null;
+  stopProgress();
+  accountStatus.textContent = `Account ${currentAccount} • Loading...`;
+  setStateMessage(`🔄 Switching to Account ${currentAccount}...`, true);
+  refreshAll();
+}
+
 // ========================================
 // EVENT LISTENERS
 // ========================================
@@ -421,9 +543,9 @@ copyLinkButton.addEventListener('click', async () => {
   if (!trackState.spotifyUrl) return;
   try {
     await navigator.clipboard.writeText(trackState.spotifyUrl);
-    setStateMessage('✅ Link copied!');
+    setStateMessage('✅ Link copied to clipboard!', true);
   } catch {
-    setStateMessage('❌ Copy failed.');
+    setStateMessage('❌ Copy failed. Please try again.', true);
   }
 });
 
@@ -445,6 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
     accountSelect.value = currentAccount;
   }
   
+  updateDefaultStateMessage('🎵 Loading Spotify...');
   refreshAll();
   scheduleRefresh();
 });
