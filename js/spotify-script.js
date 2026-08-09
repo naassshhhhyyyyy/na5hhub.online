@@ -333,16 +333,6 @@ function renderQueue(items) {
     `;
     queueList.appendChild(div);
   });
-  
-  if (items.length > 5) {
-    const more = document.createElement('div');
-    more.className = 'queue-empty';
-    more.style.marginTop = '6px';
-    more.style.padding = '10px';
-    more.style.fontSize = '0.85rem';
-    more.textContent = `+ ${items.length - 5} more tracks in queue`;
-    queueList.appendChild(more);
-  }
 }
 
 // ========================================
