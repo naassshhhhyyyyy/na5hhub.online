@@ -284,7 +284,7 @@ function renderQueue(items) {
     return;
   }
   
-  const displayItems = items.slice(0, 5);
+  const displayItems = items;
   
   displayItems.forEach((item, index) => {
     const div = document.createElement('div');
