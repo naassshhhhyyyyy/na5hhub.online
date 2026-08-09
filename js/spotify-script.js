@@ -263,7 +263,7 @@ function normalizeArtistNames(artists) {
 }
 
 // ========================================
-// RENDER QUEUE
+// RENDER QUEUE - FIXED
 // ========================================
 
 function renderQueue(items) {
@@ -291,12 +291,25 @@ function renderQueue(items) {
     div.className = 'queue-item';
     div.style.animationDelay = `${index * 0.05}s`;
     
+    // Get artist names - handle all formats
     let artistNames = 'Unknown Artist';
+    
     if (item.artists) {
       if (Array.isArray(item.artists)) {
-        artistNames = item.artists.join(', ');
-      } else if (typeof item.artists === 'string') {
+        // Filter out any null/undefined values and join
+        const validArtists = item.artists.filter(a => a && a !== '');
+        if (validArtists.length > 0) {
+          artistNames = validArtists.join(', ');
+        }
+      } else if (typeof item.artists === 'string' && item.artists !== '') {
         artistNames = item.artists;
+      }
+    }
+    
+    // Also check for artist field if artists is empty
+    if (artistNames === 'Unknown Artist' && item.artist) {
+      if (typeof item.artist === 'string') {
+        artistNames = item.artist;
       }
     }
     
@@ -333,13 +346,12 @@ function renderQueue(items) {
 }
 
 // ========================================
-// RENDER DEVICE - FIXED
+// RENDER DEVICE
 // ========================================
 
 function renderDevice(device) {
   const el = document.getElementById('device');
   
-  // Check if element exists
   if (!el) {
     console.warn('⚠ Device element not found in DOM');
     return;
@@ -457,7 +469,7 @@ function renderPlayingState(data) {
 }
 
 // ========================================
-// FETCH FUNCTIONS
+// FETCH FUNCTIONS - FIXED QUEUE
 // ========================================
 
 async function fetchQueue() {
@@ -477,44 +489,110 @@ async function fetchQueue() {
     
     let queueItems = [];
     
+    // ========================================
+    // SMART ARTIST EXTRACTION
+    // ========================================
+    
     function extractArtists(item) {
-      if (item.artists && Array.isArray(item.artists)) {
-        if (item.artists.length > 0 && typeof item.artists[0] === 'object') {
-          const names = item.artists.map(a => a.name || 'Unknown').filter(Boolean);
-          return names.length > 0 ? names : ['Unknown Artist'];
+      // Log what we're looking at for debugging
+      console.log('🔍 Extracting artists from:', item);
+      
+      // Try ALL possible artist formats
+      
+      // Format 1: artists array with objects { name: "..." }
+      if (item.artists && Array.isArray(item.artists) && item.artists.length > 0) {
+        const names = item.artists
+          .map(a => {
+            if (typeof a === 'string' && a) return a;
+            if (a && typeof a === 'object' && a.name) return a.name;
+            if (a && typeof a === 'object' && a.display_name) return a.display_name;
+            return null;
+          })
+          .filter(Boolean);
+        
+        if (names.length > 0) {
+          console.log('✅ Artists found (format 1):', names);
+          return names;
         }
-        const strings = item.artists.filter(a => typeof a === 'string' && a);
-        return strings.length > 0 ? strings : ['Unknown Artist'];
       }
       
+      // Format 2: artist is a string or object
       if (item.artist) {
-        if (typeof item.artist === 'string') return [item.artist];
-        if (item.artist.name) return [item.artist.name];
+        if (typeof item.artist === 'string' && item.artist) {
+          console.log('✅ Artists found (format 2):', [item.artist]);
+          return [item.artist];
+        }
+        if (item.artist.name) {
+          console.log('✅ Artists found (format 2b):', [item.artist.name]);
+          return [item.artist.name];
+        }
       }
       
+      // Format 3: track object nested
       if (item.track) {
         if (item.track.artists && Array.isArray(item.track.artists)) {
-          const names = item.track.artists.map(a => a.name || 'Unknown').filter(Boolean);
-          return names.length > 0 ? names : ['Unknown Artist'];
+          const names = item.track.artists
+            .map(a => {
+              if (typeof a === 'string' && a) return a;
+              if (a && a.name) return a.name;
+              return null;
+            })
+            .filter(Boolean);
+          
+          if (names.length > 0) {
+            console.log('✅ Artists found (format 3):', names);
+            return names;
+          }
         }
         if (item.track.artist) {
-          if (typeof item.track.artist === 'string') return [item.track.artist];
-          if (item.track.artist.name) return [item.track.artist.name];
+          if (typeof item.track.artist === 'string' && item.track.artist) {
+            console.log('✅ Artists found (format 3b):', [item.track.artist]);
+            return [item.track.artist];
+          }
+          if (item.track.artist.name) {
+            console.log('✅ Artists found (format 3c):', [item.track.artist.name]);
+            return [item.track.artist.name];
+          }
         }
       }
       
+      // Format 4: artists is a string with comma separation
       if (item.artists && typeof item.artists === 'string') {
-        return item.artists.split(',').map(a => a.trim()).filter(Boolean);
+        const names = item.artists.split(',').map(a => a.trim()).filter(Boolean);
+        if (names.length > 0) {
+          console.log('✅ Artists found (format 4):', names);
+          return names;
+        }
       }
       
+      // Format 5: artist_names field
+      if (item.artist_names) {
+        if (Array.isArray(item.artist_names)) {
+          const names = item.artist_names.filter(Boolean);
+          if (names.length > 0) {
+            console.log('✅ Artists found (format 5):', names);
+            return names;
+          }
+        }
+        if (typeof item.artist_names === 'string') {
+          const names = item.artist_names.split(',').map(a => a.trim()).filter(Boolean);
+          if (names.length > 0) {
+            console.log('✅ Artists found (format 5b):', names);
+            return names;
+          }
+        }
+      }
+      
+      console.warn('⚠ No artists found in item, returning Unknown Artist');
       return ['Unknown Artist'];
     }
     
     function extractSongName(item) {
       return item.song || 
              item.name || 
-             item.track?.name || 
              item.title || 
+             item.track?.name || 
+             item.track?.title || 
              'Unknown Track';
     }
     
@@ -523,6 +601,7 @@ async function fetchQueue() {
              item.image || 
              item.album?.images?.[0]?.url || 
              item.track?.album?.images?.[0]?.url ||
+             item.album_image ||
              null;
     }
     
@@ -533,50 +612,73 @@ async function fetchQueue() {
              0;
     }
     
+    // ========================================
+    // FIND QUEUE ARRAY
+    // ========================================
+    
+    // Try all possible queue locations
     if (data.queue && Array.isArray(data.queue)) {
       queueItems = data.queue;
+      console.log('📋 Found queue in data.queue');
     } else if (data.items && Array.isArray(data.items)) {
       queueItems = data.items;
+      console.log('📋 Found queue in data.items');
     } else if (data.tracks && Array.isArray(data.tracks)) {
       queueItems = data.tracks;
+      console.log('📋 Found queue in data.tracks');
     } else if (data.data && data.data.queue && Array.isArray(data.data.queue)) {
       queueItems = data.data.queue;
+      console.log('📋 Found queue in data.data.queue');
     } else if (Array.isArray(data)) {
       queueItems = data;
+      console.log('📋 Found queue as direct array');
     } else {
+      // Search for any array in the response
+      let found = false;
       for (const key in data) {
         if (Array.isArray(data[key]) && data[key].length > 0) {
           const first = data[key][0];
-          if (first && (first.name || first.song || first.track)) {
-            console.log(`📋 Found queue in property: ${key}`);
+          // Check if it looks like a track item
+          if (first && (first.name || first.song || first.track || first.artists)) {
             queueItems = data[key];
+            console.log(`📋 Found queue in property: ${key}`);
+            found = true;
             break;
           }
         }
       }
+      
+      if (!found) {
+        console.warn('⚠ No queue array found in response');
+      }
     }
     
+    // ========================================
+    // NORMALIZE QUEUE ITEMS
+    // ========================================
+    
     if (queueItems.length > 0) {
-      queueItems = queueItems.map(item => {
+      console.log(`📋 Raw queue items: ${queueItems.length}`);
+      
+      queueItems = queueItems.map((item, index) => {
         const artists = extractArtists(item);
-        const songName = extractSongName(item);
-        const albumImage = extractAlbumImage(item);
+        const song = extractSongName(item);
+        const image = extractAlbumImage(item);
         const duration = extractDuration(item);
         
-        return {
-          song: songName,
+        const normalized = {
+          song: song,
           artists: artists,
-          albumImage: albumImage,
+          albumImage: image,
           duration_ms: duration
         };
+        
+        console.log(`📋 Item ${index + 1}:`, normalized);
+        return normalized;
       });
     }
     
-    console.log(`📋 Queue items found: ${queueItems.length}`);
-    
-    if (queueItems.length > 0) {
-      console.log('📋 First queue item:', JSON.stringify(queueItems[0], null, 2));
-    }
+    console.log(`📋 Total queue items: ${queueItems.length}`);
     
     return queueItems;
     
