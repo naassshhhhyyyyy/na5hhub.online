@@ -9,7 +9,7 @@ let progressAnimation = null;
 let currentTrackId = null;
 let pausedSince = null;
 
-// DOM Elements
+// DOM Elements - with null checks
 const coverImage = document.getElementById('cover');
 const coverGlow = document.getElementById('coverGlow');
 const titleElement = document.getElementById('title');
@@ -53,11 +53,15 @@ function setStateMessage(text, autoDismiss = true) {
     stateMessageTimeout = null;
   }
   
-  stateMessage.textContent = text;
+  if (stateMessage) {
+    stateMessage.textContent = text;
+  }
   
   if (autoDismiss) {
     stateMessageTimeout = setTimeout(() => {
-      stateMessage.textContent = defaultStateMessage;
+      if (stateMessage) {
+        stateMessage.textContent = defaultStateMessage;
+      }
       stateMessageTimeout = null;
     }, 5000);
   }
@@ -65,7 +69,7 @@ function setStateMessage(text, autoDismiss = true) {
 
 function updateDefaultStateMessage(message) {
   defaultStateMessage = message;
-  if (!stateMessageTimeout) {
+  if (!stateMessageTimeout && stateMessage) {
     stateMessage.textContent = message;
   }
 }
@@ -106,12 +110,18 @@ function formatTime(ms) {
 }
 
 function setStatus(text, variant = 'live') {
-  statusText.textContent = text;
-  statusBadge.className = `status-badge ${variant}`;
+  if (statusText) {
+    statusText.textContent = text;
+  }
+  if (statusBadge) {
+    statusBadge.className = `status-badge ${variant}`;
+  }
 }
 
 function updatePlayPauseButtonLabel(isPlaying) {
-  playPauseButton.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+  if (playPauseButton) {
+    playPauseButton.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+  }
 }
 
 function promptForPassword(actionName) {
@@ -180,18 +190,26 @@ async function handleNextTrack() {
 // ========================================
 
 function updateMarquee() {
-  if (titleElement.scrollWidth > titleContainer.offsetWidth) {
-    titleElement.style.animation = 'marquee 12s linear infinite';
-  } else {
-    titleElement.style.animation = 'none';
+  if (titleElement && titleContainer) {
+    if (titleElement.scrollWidth > titleContainer.offsetWidth) {
+      titleElement.style.animation = 'marquee 12s linear infinite';
+    } else {
+      titleElement.style.animation = 'none';
+    }
   }
 }
 
 function updateProgress(currentMs, durationMs) {
-  const ratio = durationMs ? Math.min((currentMs / durationMs) * 100, 100) : 0;
-  progressBar.style.width = `${ratio}%`;
-  currentTime.textContent = formatTime(currentMs);
-  durationTime.textContent = formatTime(durationMs);
+  if (progressBar) {
+    const ratio = durationMs ? Math.min((currentMs / durationMs) * 100, 100) : 0;
+    progressBar.style.width = `${ratio}%`;
+  }
+  if (currentTime) {
+    currentTime.textContent = formatTime(currentMs);
+  }
+  if (durationTime) {
+    durationTime.textContent = formatTime(durationMs);
+  }
 }
 
 function stopProgress() {
@@ -219,6 +237,8 @@ function startProgressLoop() {
 }
 
 function updateCover(imageUrl) {
+  if (!coverImage) return;
+  
   if (!imageUrl) {
     imageUrl = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
   }
@@ -243,10 +263,15 @@ function normalizeArtistNames(artists) {
 }
 
 // ========================================
-// RENDER QUEUE - IMPROVED
+// RENDER QUEUE
 // ========================================
 
 function renderQueue(items) {
+  if (!queueList) {
+    console.warn('⚠ Queue list element not found');
+    return;
+  }
+  
   queueList.innerHTML = '';
   
   if (!items || !items.length) {
@@ -266,7 +291,6 @@ function renderQueue(items) {
     div.className = 'queue-item';
     div.style.animationDelay = `${index * 0.05}s`;
     
-    // Get artist names properly
     let artistNames = 'Unknown Artist';
     if (item.artists) {
       if (Array.isArray(item.artists)) {
@@ -308,12 +332,24 @@ function renderQueue(items) {
   }
 }
 
+// ========================================
+// RENDER DEVICE - FIXED
+// ========================================
+
 function renderDevice(device) {
   const el = document.getElementById('device');
+  
+  // Check if element exists
+  if (!el) {
+    console.warn('⚠ Device element not found in DOM');
+    return;
+  }
+  
   if (!device) {
     el.innerHTML = '🎧 Unknown device';
     return;
   }
+  
   const icons = { Computer: '💻', Smartphone: '📱', Speaker: '🔊', TV: '📺', 'Game Console': '🎮' };
   const icon = icons[device.type] || '🎧';
   el.innerHTML = `<span>${icon}</span> Playing on <strong>${device.name || 'Unknown'}</strong>`;
@@ -325,32 +361,40 @@ function renderDevice(device) {
 
 function renderIdleState() {
   setStatus('💤 Inactive', 'paused');
-  titleElement.textContent = 'No track playing';
-  artistElement.textContent = 'Playback is inactive';
-  albumElement.textContent = 'No playback activity';
-  coverImage.src = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
-  spotifyLink.href = '#';
-  spotifyLink.classList.add('disabled');
-  spotifyLink.innerHTML = '⚠ Cannot open';
-  copyLinkButton.disabled = true;
-  copyLinkButton.classList.add('disabled');
+  if (titleElement) titleElement.textContent = 'No track playing';
+  if (artistElement) artistElement.textContent = 'Playback is inactive';
+  if (albumElement) albumElement.textContent = 'No playback activity';
+  updateCover(null);
+  if (spotifyLink) {
+    spotifyLink.href = '#';
+    spotifyLink.classList.add('disabled');
+    spotifyLink.innerHTML = '⚠ Cannot open';
+  }
+  if (copyLinkButton) {
+    copyLinkButton.disabled = true;
+    copyLinkButton.classList.add('disabled');
+  }
   updatePlayPauseButtonLabel(false);
   updateProgress(0, 0);
-  queueSection.classList.add('hidden');
+  if (queueSection) queueSection.classList.add('hidden');
   stopProgress();
-  accountStatus.textContent = `Account ${currentAccount} • Idle`;
+  if (accountStatus) {
+    accountStatus.textContent = `Account ${currentAccount} • Idle`;
+  }
   updateDefaultStateMessage('💤 No track playing. Start some music!');
 }
 
 function renderErrorState(message) {
   setStatus('⚠ Offline', 'error');
-  titleElement.textContent = 'Spotify Offline';
-  artistElement.textContent = 'Unable to connect';
-  albumElement.textContent = message;
-  coverImage.src = 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg';
+  if (titleElement) titleElement.textContent = 'Spotify Offline';
+  if (artistElement) artistElement.textContent = 'Unable to connect';
+  if (albumElement) albumElement.textContent = message;
+  updateCover(null);
   updatePlayPauseButtonLabel(false);
   updateProgress(0, 0);
-  accountStatus.textContent = `Account ${currentAccount} • Error`;
+  if (accountStatus) {
+    accountStatus.textContent = `Account ${currentAccount} • Error`;
+  }
   updateDefaultStateMessage('⚠ ' + message);
 }
 
@@ -364,16 +408,20 @@ function renderPlayingState(data) {
   }
   
   setStatus(data.playing ? '🟢 Listening Now' : '🟡 Paused', data.playing ? 'live' : 'paused');
-  titleElement.textContent = data.song || 'Unknown';
-  artistElement.textContent = data.artists?.join(', ') || 'Unknown';
-  albumElement.textContent = data.album || 'Unknown';
+  if (titleElement) titleElement.textContent = data.song || 'Unknown';
+  if (artistElement) artistElement.textContent = data.artists?.join(', ') || 'Unknown';
+  if (albumElement) albumElement.textContent = data.album || 'Unknown';
   
-  spotifyLink.href = data.spotifyUrl || '#';
-  spotifyLink.classList.remove('disabled');
-  spotifyLink.innerHTML = '♬ Open in Spotify';
+  if (spotifyLink) {
+    spotifyLink.href = data.spotifyUrl || '#';
+    spotifyLink.classList.remove('disabled');
+    spotifyLink.innerHTML = '♬ Open in Spotify';
+  }
   
-  copyLinkButton.disabled = !data.spotifyUrl;
-  copyLinkButton.classList.toggle('disabled', !data.spotifyUrl);
+  if (copyLinkButton) {
+    copyLinkButton.disabled = !data.spotifyUrl;
+    copyLinkButton.classList.toggle('disabled', !data.spotifyUrl);
+  }
   
   trackState = {
     playing: data.playing || false,
@@ -396,8 +444,10 @@ function renderPlayingState(data) {
     stopProgress();
   }
   
-  queueSection.classList.remove('hidden');
-  accountStatus.textContent = `Account ${currentAccount} • ${data.playing ? 'Playing' : 'Paused'}`;
+  if (queueSection) queueSection.classList.remove('hidden');
+  if (accountStatus) {
+    accountStatus.textContent = `Account ${currentAccount} • ${data.playing ? 'Playing' : 'Paused'}`;
+  }
   
   if (data.playing) {
     updateDefaultStateMessage(`🎵 Now playing: ${data.song} by ${data.artists?.join(', ') || 'Unknown'}`);
@@ -407,7 +457,7 @@ function renderPlayingState(data) {
 }
 
 // ========================================
-// FETCH FUNCTIONS - FIXED QUEUE ARTISTS
+// FETCH FUNCTIONS
 // ========================================
 
 async function fetchQueue() {
@@ -427,16 +477,12 @@ async function fetchQueue() {
     
     let queueItems = [];
     
-    // Function to extract artist names from various formats
     function extractArtists(item) {
-      // Try multiple possible artist formats
       if (item.artists && Array.isArray(item.artists)) {
-        // Check if artists are objects with name property
         if (item.artists.length > 0 && typeof item.artists[0] === 'object') {
           const names = item.artists.map(a => a.name || 'Unknown').filter(Boolean);
           return names.length > 0 ? names : ['Unknown Artist'];
         }
-        // If artists are strings
         const strings = item.artists.filter(a => typeof a === 'string' && a);
         return strings.length > 0 ? strings : ['Unknown Artist'];
       }
@@ -446,7 +492,6 @@ async function fetchQueue() {
         if (item.artist.name) return [item.artist.name];
       }
       
-      // Check track object (nested)
       if (item.track) {
         if (item.track.artists && Array.isArray(item.track.artists)) {
           const names = item.track.artists.map(a => a.name || 'Unknown').filter(Boolean);
@@ -458,7 +503,6 @@ async function fetchQueue() {
         }
       }
       
-      // Check if artists is a string with comma separation
       if (item.artists && typeof item.artists === 'string') {
         return item.artists.split(',').map(a => a.trim()).filter(Boolean);
       }
@@ -466,7 +510,6 @@ async function fetchQueue() {
       return ['Unknown Artist'];
     }
     
-    // Function to extract song name
     function extractSongName(item) {
       return item.song || 
              item.name || 
@@ -475,7 +518,6 @@ async function fetchQueue() {
              'Unknown Track';
     }
     
-    // Function to extract album image
     function extractAlbumImage(item) {
       return item.albumImage || 
              item.image || 
@@ -484,7 +526,6 @@ async function fetchQueue() {
              null;
     }
     
-    // Function to extract duration
     function extractDuration(item) {
       return item.duration_ms || 
              item.duration || 
@@ -492,7 +533,6 @@ async function fetchQueue() {
              0;
     }
     
-    // Try multiple possible response structures
     if (data.queue && Array.isArray(data.queue)) {
       queueItems = data.queue;
     } else if (data.items && Array.isArray(data.items)) {
@@ -504,7 +544,6 @@ async function fetchQueue() {
     } else if (Array.isArray(data)) {
       queueItems = data;
     } else {
-      // Try to find any array property
       for (const key in data) {
         if (Array.isArray(data[key]) && data[key].length > 0) {
           const first = data[key][0];
@@ -517,7 +556,6 @@ async function fetchQueue() {
       }
     }
     
-    // Normalize the items with proper artist extraction
     if (queueItems.length > 0) {
       queueItems = queueItems.map(item => {
         const artists = extractArtists(item);
@@ -536,7 +574,6 @@ async function fetchQueue() {
     
     console.log(`📋 Queue items found: ${queueItems.length}`);
     
-    // Log first few items to debug
     if (queueItems.length > 0) {
       console.log('📋 First queue item:', JSON.stringify(queueItems[0], null, 2));
     }
@@ -588,7 +625,9 @@ async function refreshAll() {
     if (data && data._error) {
       setStatus('⚠ Account Issue', 'error');
       setStateMessage(`Account ${currentAccount}: ${data._error}`, false);
-      accountStatus.textContent = `Account ${currentAccount} • ⚠ Not Configured`;
+      if (accountStatus) {
+        accountStatus.textContent = `Account ${currentAccount} • ⚠ Not Configured`;
+      }
       updateDefaultStateMessage(`⚠ ${data._error}`);
       return;
     }
@@ -627,7 +666,9 @@ function switchAccount(account) {
   currentAccount = parseInt(account);
   currentTrackId = null;
   stopProgress();
-  accountStatus.textContent = `Account ${currentAccount} • Loading...`;
+  if (accountStatus) {
+    accountStatus.textContent = `Account ${currentAccount} • Loading...`;
+  }
   setStateMessage(`🔄 Switching to Account ${currentAccount}...`, true);
   refreshAll();
 }
@@ -636,21 +677,33 @@ function switchAccount(account) {
 // EVENT LISTENERS
 // ========================================
 
-copyLinkButton.addEventListener('click', async () => {
-  if (!trackState.spotifyUrl) return;
-  try {
-    await navigator.clipboard.writeText(trackState.spotifyUrl);
-    setStateMessage('✅ Link copied to clipboard!', true);
-  } catch {
-    setStateMessage('❌ Copy failed. Please try again.', true);
-  }
-});
+if (copyLinkButton) {
+  copyLinkButton.addEventListener('click', async () => {
+    if (!trackState.spotifyUrl) return;
+    try {
+      await navigator.clipboard.writeText(trackState.spotifyUrl);
+      setStateMessage('✅ Link copied to clipboard!', true);
+    } catch {
+      setStateMessage('❌ Copy failed. Please try again.', true);
+    }
+  });
+}
 
-previousButton.addEventListener('click', handlePreviousTrack);
-playPauseButton.addEventListener('click', handlePlayPause);
-nextButton.addEventListener('click', handleNextTrack);
+if (previousButton) {
+  previousButton.addEventListener('click', handlePreviousTrack);
+}
 
-accountSelect.addEventListener('change', (e) => switchAccount(e.target.value));
+if (playPauseButton) {
+  playPauseButton.addEventListener('click', handlePlayPause);
+}
+
+if (nextButton) {
+  nextButton.addEventListener('click', handleNextTrack);
+}
+
+if (accountSelect) {
+  accountSelect.addEventListener('change', (e) => switchAccount(e.target.value));
+}
 
 // ========================================
 // INIT
@@ -661,7 +714,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const account = params.get('account');
   if (account) {
     currentAccount = parseInt(account);
-    accountSelect.value = currentAccount;
+    if (accountSelect) {
+      accountSelect.value = currentAccount;
+    }
   }
   
   updateDefaultStateMessage('🎵 Loading Spotify...');
