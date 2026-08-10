@@ -35,7 +35,6 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
 
-        /* Current Song */
         .current-song {
             display: flex;
             gap: 14px;
@@ -116,7 +115,6 @@
             width: 0%;
         }
 
-        /* Up Next */
         .upcoming {
             display: flex;
             flex-direction: column;
@@ -147,7 +145,6 @@
             background: rgba(255,255,255,0.03);
             border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.04);
-            transition: background 0.2s;
         }
 
         .upcoming-song .number {
@@ -188,16 +185,10 @@
             text-overflow: ellipsis;
         }
 
-        /* Empty States */
         .empty-state {
             text-align: center;
             padding: 16px;
             opacity: 0.4;
-        }
-
-        .empty-state .icon {
-            font-size: 28px;
-            margin-bottom: 6px;
         }
 
         .empty-state .text {
@@ -223,7 +214,6 @@
             margin-top: 4px;
         }
 
-        /* Animations */
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.4; transform: scale(0.8); }
@@ -238,7 +228,6 @@
             animation: slideIn 0.5s ease;
         }
 
-        /* Scrollbar */
         .queue-scroll {
             max-height: 250px;
             overflow-y: auto;
@@ -258,7 +247,6 @@
             border-radius: 10px;
         }
 
-        /* Responsive */
         @media (max-width: 480px) {
             .widget {
                 padding: 14px;
@@ -287,12 +275,12 @@
 
     <script>
         // ========================================
-        // CONFIGURATION
+        // CONFIGURATION - FIXED URL
         // ========================================
         
-        // Auto-detect the API URL
-        const API_URL = "https://spotify-auth-g08f.onrender.com/api/tiktok-widget?account=1;
-        const REFRESH_INTERVAL = 5000; // Update every 5 seconds
+        // ✅ FIXED: Added missing closing quote
+        const API_URL = "https://spotify-auth-g08f.onrender.com/api/tiktok-widget?account=1";
+        const REFRESH_INTERVAL = 5000;
 
         // ========================================
         // STATE
@@ -306,13 +294,6 @@
         // DOM HELPERS
         // ========================================
         
-        function formatTime(ms) {
-            if (!ms || ms < 0) return '0:00';
-            const minutes = Math.floor(ms / 60000);
-            const seconds = Math.floor((ms % 60000) / 1000);
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        }
-
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
@@ -326,7 +307,7 @@
         
         function updateProgress() {
             if (currentDuration > 0 && currentProgress < currentDuration) {
-                currentProgress += 1000; // Add 1 second
+                currentProgress += 1000;
                 const progressBar = document.querySelector('.progress-bar');
                 if (progressBar) {
                     const percentage = Math.min((currentProgress / currentDuration) * 100, 100);
@@ -342,13 +323,12 @@
         function renderWidget(data) {
             const widget = document.getElementById('widget');
             
-            // Handle errors
             if (data.error) {
                 widget.innerHTML = `
                     <div class="error">
                         ❌ ${escapeHtml(data.error)}
                         ${data.setupUrl ? `<br><small><a href="${data.setupUrl}" style="color: #1DB954; text-decoration: none;">Setup Account</a></small>` : ''}
-                        <small>Retrying in ${REFRESH_INTERVAL/1000}s...</small>
+                        <small>Retrying...</small>
                     </div>
                 `;
                 return;
@@ -356,12 +336,11 @@
 
             let html = '';
 
-            // ===== CURRENT SONG =====
+            // CURRENT SONG
             if (data.current && data.isPlaying) {
                 const current = data.current;
                 currentDuration = current.duration_ms || 0;
                 currentProgress = current.progress_ms || 0;
-                
                 const progressPercentage = currentDuration > 0 ? (currentProgress / currentDuration) * 100 : 0;
 
                 html += `
@@ -395,7 +374,7 @@
                 `;
             }
 
-            // ===== UPCOMING SONGS =====
+            // UPCOMING SONGS
             if (data.next && data.next.length > 0) {
                 html += `<div class="upcoming">`;
                 html += `
@@ -404,9 +383,7 @@
                         <span>${data.queueLength} in queue</span>
                     </div>
                 `;
-                
                 html += `<div class="queue-scroll">`;
-                
                 data.next.forEach((song, index) => {
                     html += `
                         <div class="upcoming-song">
@@ -422,9 +399,7 @@
                         </div>
                     `;
                 });
-                
-                html += `</div>`; // Close queue-scroll
-                html += `</div>`; // Close upcoming
+                html += `</div></div>`;
             } else {
                 html += `
                     <div class="upcoming">
@@ -438,7 +413,6 @@
 
             widget.innerHTML = html;
 
-            // Start progress animation if playing
             if (data.current && data.isPlaying) {
                 if (progressInterval) clearInterval(progressInterval);
                 progressInterval = setInterval(updateProgress, 1000);
@@ -469,7 +443,7 @@
                     <div class="error">
                         ❌ Connection Error
                         <small>${escapeHtml(error.message)}</small>
-                        <small>Retrying in ${REFRESH_INTERVAL/1000}s...</small>
+                        <small>Retrying...</small>
                     </div>
                 `;
             }
@@ -479,10 +453,7 @@
         // START
         // ========================================
         
-        // Initial fetch
         fetchData();
-
-        // Auto-refresh
         setInterval(fetchData, REFRESH_INTERVAL);
     </script>
 </body>
