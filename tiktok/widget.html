@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎵 TikTok Live - Spotify Widget</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 16px;
+            color: white;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .widget {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        /* Current Song */
+        .current-song {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 18px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .current-song .cover {
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            object-fit: cover;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .current-song .info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .current-song .label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.5;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .playing-dot {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            background: #1DB954;
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        .current-song .title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .current-song .artist {
+            font-size: 12px;
+            opacity: 0.7;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .current-song .progress-wrap {
+            margin-top: 6px;
+            height: 2px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .current-song .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #1DB954, #1ed760);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        /* Up Next */
+        .upcoming {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .upcoming .header {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.4;
+            margin-bottom: 2px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .upcoming .header span {
+            font-size: 9px;
+            opacity: 0.4;
+        }
+
+        .upcoming-song {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: background 0.2s;
+        }
+
+        .upcoming-song .number {
+            font-size: 10px;
+            font-weight: 700;
+            opacity: 0.3;
+            min-width: 18px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .upcoming-song .cover-small {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            object-fit: cover;
+        }
+
+        .upcoming-song .info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .upcoming-song .title {
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .upcoming-song .artist {
+            font-size: 10px;
+            opacity: 0.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 16px;
+            opacity: 0.4;
+        }
+
+        .empty-state .icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+
+        .empty-state .text {
+            font-size: 12px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            opacity: 0.4;
+        }
+
+        .error {
+            text-align: center;
+            padding: 16px;
+            color: #ff6b6b;
+            font-size: 13px;
+        }
+
+        .error small {
+            opacity: 0.6;
+            display: block;
+            margin-top: 4px;
+        }
+
+        /* Animations */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .widget {
+            animation: slideIn 0.5s ease;
+        }
+
+        /* Scrollbar */
+        .queue-scroll {
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .queue-scroll::-webkit-scrollbar {
+            width: 2px;
+        }
+
+        .queue-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .queue-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .widget {
+                padding: 14px;
+                border-radius: 14px;
+            }
+            
+            .current-song .cover {
+                width: 56px;
+                height: 56px;
+            }
+            
+            .current-song .title {
+                font-size: 14px;
+            }
+            
+            .current-song .artist {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="widget" id="widget">
+        <div class="loading">🎵 Loading...</div>
+    </div>
+
+    <script>
+        // ========================================
+        // CONFIGURATION
+        // ========================================
+        
+        // Auto-detect the API URL
+        const API_URL = window.location.origin + '/api/tiktok-widget?account=1';
+        const REFRESH_INTERVAL = 5000; // Update every 5 seconds
+
+        // ========================================
+        // STATE
+        // ========================================
+        
+        let currentProgress = 0;
+        let currentDuration = 0;
+        let progressInterval = null;
+
+        // ========================================
+        // DOM HELPERS
+        // ========================================
+        
+        function formatTime(ms) {
+            if (!ms || ms < 0) return '0:00';
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========================================
+        // PROGRESS UPDATE
+        // ========================================
+        
+        function updateProgress() {
+            if (currentDuration > 0 && currentProgress < currentDuration) {
+                currentProgress += 1000; // Add 1 second
+                const progressBar = document.querySelector('.progress-bar');
+                if (progressBar) {
+                    const percentage = Math.min((currentProgress / currentDuration) * 100, 100);
+                    progressBar.style.width = percentage + '%';
+                }
+            }
+        }
+
+        // ========================================
+        // RENDER WIDGET
+        // ========================================
+        
+        function renderWidget(data) {
+            const widget = document.getElementById('widget');
+            
+            // Handle errors
+            if (data.error) {
+                widget.innerHTML = `
+                    <div class="error">
+                        ❌ ${escapeHtml(data.error)}
+                        ${data.setupUrl ? `<br><small><a href="${data.setupUrl}" style="color: #1DB954; text-decoration: none;">Setup Account</a></small>` : ''}
+                        <small>Retrying in ${REFRESH_INTERVAL/1000}s...</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            // ===== CURRENT SONG =====
+            if (data.current && data.isPlaying) {
+                const current = data.current;
+                currentDuration = current.duration_ms || 0;
+                currentProgress = current.progress_ms || 0;
+                
+                const progressPercentage = currentDuration > 0 ? (currentProgress / currentDuration) * 100 : 0;
+
+                html += `
+                    <div class="current-song">
+                        ${current.albumImage ? 
+                            `<img class="cover" src="${escapeHtml(current.albumImage)}" alt="${escapeHtml(current.song)}" loading="lazy">` : 
+                            '<div class="cover"></div>'
+                        }
+                        <div class="info">
+                            <div class="label">
+                                <span class="playing-dot"></span> NOW PLAYING
+                            </div>
+                            <div class="title" title="${escapeHtml(current.song)}">${escapeHtml(current.song)}</div>
+                            <div class="artist" title="${escapeHtml(current.artistString)}">${escapeHtml(current.artistString)}</div>
+                            <div class="progress-wrap">
+                                <div class="progress-bar" style="width: ${Math.min(progressPercentage, 100)}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="current-song" style="opacity:0.6;">
+                        <div class="cover" style="background: rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:28px;">🎵</div>
+                        <div class="info">
+                            <div class="label">⏸ PAUSED</div>
+                            <div class="title" style="font-weight:400;">Nothing playing</div>
+                            <div class="artist">Waiting for music...</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // ===== UPCOMING SONGS =====
+            if (data.next && data.next.length > 0) {
+                html += `<div class="upcoming">`;
+                html += `
+                    <div class="header">
+                        <span>📋 UP NEXT</span>
+                        <span>${data.queueLength} in queue</span>
+                    </div>
+                `;
+                
+                html += `<div class="queue-scroll">`;
+                
+                data.next.forEach((song, index) => {
+                    html += `
+                        <div class="upcoming-song">
+                            <div class="number">#${index + 1}</div>
+                            ${song.albumImage ? 
+                                `<img class="cover-small" src="${escapeHtml(song.albumImage)}" alt="${escapeHtml(song.song)}" loading="lazy">` : 
+                                '<div class="cover-small"></div>'
+                            }
+                            <div class="info">
+                                <div class="title" title="${escapeHtml(song.song)}">${escapeHtml(song.song)}</div>
+                                <div class="artist" title="${escapeHtml(song.artistString)}">${escapeHtml(song.artistString)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`; // Close queue-scroll
+                html += `</div>`; // Close upcoming
+            } else {
+                html += `
+                    <div class="upcoming">
+                        <div class="header">📋 UP NEXT</div>
+                        <div class="empty-state">
+                            <div class="text">No songs in queue</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            widget.innerHTML = html;
+
+            // Start progress animation if playing
+            if (data.current && data.isPlaying) {
+                if (progressInterval) clearInterval(progressInterval);
+                progressInterval = setInterval(updateProgress, 1000);
+            } else {
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+                }
+            }
+        }
+
+        // ========================================
+        // FETCH DATA
+        // ========================================
+        
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                renderWidget(data);
+            } catch (error) {
+                const widget = document.getElementById('widget');
+                widget.innerHTML = `
+                    <div class="error">
+                        ❌ Connection Error
+                        <small>${escapeHtml(error.message)}</small>
+                        <small>Retrying in ${REFRESH_INTERVAL/1000}s...</small>
+                    </div>
+                `;
+            }
+        }
+
+        // ========================================
+        // START
+        // ========================================
+        
+        // Initial fetch
+        fetchData();
+
+        // Auto-refresh
+        setInterval(fetchData, REFRESH_INTERVAL);
+    </script>
+</body>
+</html>
